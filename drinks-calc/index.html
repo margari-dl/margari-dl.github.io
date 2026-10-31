@@ -157,7 +157,7 @@ input[readonly]{background:#F4F0E2!important;border-color:transparent!important;
   <div class="card">
     <h2><span class="num">2</span>Чем корректируем</h2>
     <div class="g">
-      <label class="alc">Спирт, % об.<input id="as" value="96,4" inputmode="decimal"></label>
+      <label class="alc">Спирт, % об.<input id="as" inputmode="decimal"></label>
       <label>Сахарный сироп, °Brix<select id="sy"></select></label>
       <label class="wide">Лимонная кислота<input value="моногидрат Е330" disabled></label>
     </div>
@@ -311,7 +311,7 @@ function calc(){
   if(nothing&&!missF.length&&!missS.length)msg.innerHTML+=`<div class="warn" style="background:var(--ok-bg);color:var(--ok)">Все показатели в пределах стандарта. Корректировка не нужна.</div>`;
 
   let h='';
-  if(!soft)h+=box('Спирт '+f(As,1)+' %',f(Vs,2)+' л','',Vs===0,'c-alc');
+  if(!soft)h+=box(isFinite(As)?'Спирт '+f(As,1)+' %':'Спирт',f(Vs,2)+' л','',Vs===0,'c-alc');
   h+=box('Сахарный сироп '+f(By,1)+' °Brix',f(Vy,2)+' л',Vy?'≈ '+f(Vy*dSug(By),2)+' кг':'',Vy===0,'c-syr');
   h+=box('Вода',f(Vw,2)+' л','',Vw===0,'c-wat');
   h+=box('Лимонная кислота Е330',f(m/1000,3)+' кг',m?f(m,0)+' г':'',m===0,'c-acid');
@@ -326,7 +326,7 @@ function calc(){
   if(P.K.hasF)out.K=(V0*k0+m)/V/KF;
   tb.innerHTML=rowsOut(out)+`<tr><td class="p">Объём, л</td><td data-l="Было">${f(V0,1)}</td><td data-l="Станет"><b>${f(V,2)}</b></td><td></td><td></td></tr>`;
 }
-function resetFacts(){const sel=type==='soft'?'input.f,input.mn,input.mx':'input.f';for(const i of $('rows').querySelectorAll(sel)){i.value='';i.classList.remove('bad');}$('v0').value='';$('vt').value='';calc();const first=$('rows').querySelector('input.f');if(first)first.focus();}
+function resetFacts(){const sel=type==='soft'?'input.f,input.mn,input.mx':'input.f';for(const i of $('rows').querySelectorAll(sel)){i.value='';i.classList.remove('bad');}$('v0').value='';$('vt').value='';if(type==='alc')$('as').value='';calc();const first=$('rows').querySelector('input.f');if(first)first.focus();}
 document.addEventListener('focusout',e=>{const t=e.target;if(t.matches&&t.matches('input.mn,input.mx')){const v=num(t.value);if(isFinite(v))t.value=(Math.round(v*10)/10).toLocaleString('ru-RU',{maximumFractionDigits:1});}});
 ['input','change','keyup','paste','cut','focusout'].forEach(ev=>document.addEventListener(ev,()=>{calc();setTimeout(calc,0);}));
 let lastSig='';setInterval(()=>{const sig=[...document.querySelectorAll('input,select')].map(i=>i.value).join('|')+type;if(sig!==lastSig){lastSig=sig;calc();}},400);
