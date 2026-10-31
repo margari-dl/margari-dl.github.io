@@ -1,0 +1,532 @@
+<!doctype html>
+<html lang="ru" data-pal="bordo">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Маргарита · Портфолио</title>
+<meta name="description" content="Маргарита — ведущий специалист ФЦК: коммерческие обучения, учёт ресурсов проектов, аналитика и дашборды.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  /* ===== Цвета по правилу 60-30-10 =====
+     60 % — нейтральный фон (--bg), 30 % — фирменный цвет (--brand: плашки разделов, заголовки, графики),
+     10 % — акцент (--accent): только главные кнопки и маркеры. */
+  :root {
+    --font: "Inter Tight", system-ui, "Segoe UI", sans-serif;
+    --mono: "JetBrains Mono", Consolas, monospace;
+    --radius: 20px;
+  }
+  :root[data-pal="bordo"] {
+    --bg: #f4efe9; --surface: #fbf8f4; --line: #e3d9d1; --bar: #d8cfc9; --mesh: #b8a6a4;
+    --ink: #26141a; --muted: #6f5b60;
+    --brand: #6b1626; --brand-2: #9c3346; --brand-3: #c76a72; --brand-4: #e6b9b6; --brand-rgb: 70 10 22;
+    --accent: #f2743f; --on-accent: #26141a;
+  }
+  :root[data-pal="sage"] {
+    --bg: #f1f2ea; --surface: #f9faf4; --line: #dcdfcf; --bar: #d3d6c6; --mesh: #a7b59b;
+    --ink: #1c2112; --muted: #5d644c;
+    --brand: #47522a; --brand-2: #6d7a3d; --brand-3: #a3ad6c; --brand-4: #d3d9ad; --brand-rgb: 34 41 16;
+    --accent: #d2e05a; --on-accent: #1c2112;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: var(--font); font-size: 15px; line-height: 1.55; -webkit-font-smoothing: antialiased;
+    transition: background-color .5s, color .5s;
+  }
+  a { color: inherit; }
+  button { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .mono { font-family: var(--mono); font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  h1, h2, h3 { margin: 0; font-weight: 500; letter-spacing: -.03em; line-height: 1.06; text-wrap: balance; }
+  h1 { font-size: clamp(36px, 4.4vw, 56px); }
+  h2 { font-size: clamp(26px, 2.8vw, 36px); }
+  h3 { font-size: 18px; letter-spacing: -.015em; line-height: 1.2; }
+  p { margin: 0; }
+
+  /* ===== Шапка ===== */
+  header { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--bg) 82%, transparent); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); transition: background-color .5s; }
+  .bar { display: flex; align-items: center; gap: 24px; height: 60px; }
+  .logo { text-decoration: none; font-weight: 600; letter-spacing: .14em; font-size: 13px; color: var(--brand); }
+  nav { display: flex; gap: 22px; margin-left: auto; }
+  nav a { text-decoration: none; font-size: 14px; color: var(--muted); }
+  nav a:hover { color: var(--brand); }
+  .pal { display: flex; gap: 2px; border: 1px solid var(--line); border-radius: 999px; padding: 3px; }
+  .pal button { display: flex; align-items: center; gap: 7px; border: 0; background: transparent; border-radius: 999px; padding: 5px 11px; font-size: 13px; color: var(--muted); cursor: pointer; }
+  .pal button[aria-pressed="true"] { background: var(--brand); color: #fff; }
+  .pal i { width: 10px; height: 10px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, .7); }
+
+  /* ===== Кнопки: акцент только у главного действия ===== */
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; font-size: 14px; font-weight: 500; padding: 11px 20px; border-radius: 999px; border: 1px solid var(--line); background: transparent; cursor: pointer; transition: transform .2s; }
+  .btn:hover { transform: translateY(-2px); }
+  .btn.accent { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+
+  /* ===== Зернистое стекло на плашках: внутри — копия подложки, пропущенная через фильтр ===== */
+  .glass { position: relative; border-radius: var(--radius); overflow: hidden; overflow: clip; isolation: isolate; color: #fff; }
+  .glass-fx { position: absolute; inset: -70px; overflow: hidden; overflow: clip; filter: url(#grainGlass); z-index: -3; background: var(--brand); }
+  .glass-fx .clone { position: absolute; }
+  .glass-fx .clone > * { position: absolute !important; inset: 0 !important; width: 100% !important; height: 100% !important; margin: 0 !important; border-radius: 0 !important; transform: none !important; }
+  .glass::before { content: ""; position: absolute; inset: 0; z-index: -2; background: linear-gradient(140deg, rgba(255, 255, 255, .2), transparent 45%), rgb(var(--brand-rgb) / .28); }
+  .glass .grain { position: absolute; inset: 0; z-index: -1; opacity: .34; mix-blend-mode: overlay; pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .glass::after { content: ""; position: absolute; inset: 0; border-radius: inherit; border: 1px solid rgba(255, 255, 255, .6); pointer-events: none; }
+  .glass .mono { color: rgba(255, 255, 255, .78); }
+  .glass-body { position: relative; padding: 18px 20px; display: grid; gap: 12px; }
+
+  /* ===== Первый экран ===== */
+  .hero { display: grid; grid-template-columns: 1.15fr .85fr; gap: 56px; align-items: center; padding-block: 64px 72px; }
+  .hero > * { min-width: 0; }
+  .hero h1 { margin-block: 14px 18px; color: var(--brand); }
+  .lead { font-size: 16px; color: var(--muted); max-width: 52ch; margin-bottom: 24px; }
+  .lead b { color: var(--ink); font-weight: 500; }
+  .motto { border-left: 2px solid var(--brand); padding-left: 14px; margin-bottom: 24px; font-size: 15px; color: var(--ink); max-width: 44ch; }
+
+  /* Фото без рамки-окна: обычный портрет, поверх — плашка из зернистого стекла */
+  .portrait { position: relative; width: min(360px, calc(100% - 22px)); aspect-ratio: 885 / 1000; justify-self: end; margin: 0 22px 22px 0; }
+  .portrait::before { content: ""; position: absolute; inset: 22px -22px -22px 22px; border-radius: var(--radius); background: var(--brand); transition: background-color .5s; }
+  .portrait .frame { position: absolute; inset: 0; border-radius: var(--radius); overflow: hidden; isolation: isolate; }
+  .portrait .clear { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  /* Сетка с лентами поверх фото (по референсу): у лица растворяется, чтобы не перечёркивать его */
+  .portrait .mesh { position: absolute; inset: 0; pointer-events: none;
+    -webkit-mask-image: radial-gradient(ellipse 30% 24% at 52% 25%, transparent 55%, #000 100%);
+            mask-image: radial-gradient(ellipse 30% 24% at 52% 25%, transparent 55%, #000 100%); }
+  .portrait .mesh svg { width: 100%; height: 100%; display: block; }
+  .portrait .frame::after { content: ""; position: absolute; inset: 0; border-radius: inherit; border: 1px solid rgba(255, 255, 255, .55); pointer-events: none; }
+  /* Плашка с цифрами поверх фото — то же зернистое стекло, что на плашках разделов */
+  .portrait .glass { position: absolute; left: 14px; right: 14px; bottom: 12%; z-index: 2; }
+  .portrait .glass::before { background: linear-gradient(140deg, rgba(255, 255, 255, .12), transparent 45%), rgb(var(--brand-rgb) / .55); }
+  .pfacts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .pfacts b { display: block; font-size: 22px; font-weight: 500; letter-spacing: -.02em; line-height: 1.1; }
+  .pfacts span { display: block; font-size: 11.5px; line-height: 1.3; color: rgba(255, 255, 255, .85); margin-top: 3px; }
+
+  /* ===== Плашки фирменного цвета (те самые 30 %) ===== */
+  section { padding-block: 40px; }
+  .band { position: relative; border-radius: 28px; overflow: hidden; color: #fff; padding: clamp(28px, 4vw, 48px); isolation: isolate; }
+  .blobs { position: absolute; inset: 0; z-index: -1; background: var(--brand); transition: background-color .5s; }
+  .blobs i { position: absolute; border-radius: 50%; }
+  .blobs .b1 { width: 46%; aspect-ratio: 1; left: -8%; top: 30%; background: radial-gradient(circle at 40% 40%, var(--brand-3) 0 38%, var(--brand-2) 62%, transparent 72%); }
+  .blobs .b2 { width: 34%; aspect-ratio: 1; right: 6%; top: -18%; background: radial-gradient(circle, var(--brand-2) 0 45%, transparent 70%); }
+  .blobs .b3 { width: 22%; aspect-ratio: 1; right: 22%; bottom: -10%; background: radial-gradient(circle, var(--brand-3) 0 40%, transparent 70%); }
+  /* Пятна с чёткими краями: на них зерно стекла видно сильнее всего */
+  .blobs .b4 { width: 16%; aspect-ratio: 1; left: 38%; top: 8%; background: radial-gradient(circle, var(--brand-4) 0 46%, var(--brand-3) 50%, transparent 56%); opacity: .8; }
+  .blobs .b5 { width: 28%; aspect-ratio: 1; right: -6%; top: 46%; background: radial-gradient(circle, var(--brand-2) 0 52%, transparent 58%); }
+  .band .sec-head .mono { color: rgba(255, 255, 255, .7); }
+  .sec-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 12px; margin-bottom: 28px; }
+
+  /* Чем занимаюсь */
+  .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .cards .glass-body { padding: 20px; gap: 10px; align-content: start; height: 100%; }
+  .cards p { font-size: 14px; color: rgba(255, 255, 255, .88); }
+  .num { font-family: var(--mono); font-size: 12px; color: var(--accent); }
+
+  /* ===== Кейс ===== */
+  .case-intro { display: grid; grid-template-columns: .8fr 1.2fr; gap: 40px; align-items: start; margin-bottom: 28px; }
+  .case-intro > * { min-width: 0; }
+  .case-intro h2 { color: var(--brand); margin-block: 10px 16px; }
+  .case-intro p { color: var(--muted); }
+  .ticks-title { color: var(--ink) !important; margin-bottom: 12px; }
+  .groups { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 24px; }
+  .grp { display: flex; gap: 12px; align-items: baseline; padding-top: 10px; border-top: 1px solid var(--line); }
+  .grp .cnt { flex: none; width: 22px; font: 500 12px var(--mono); color: var(--brand); }
+  .grp b { display: block; font-weight: 500; font-size: 15px; }
+  .grp span:not(.cnt) { display: block; font-size: 13px; color: var(--muted); line-height: 1.4; }
+
+  .dash { position: relative; overflow: hidden; isolation: isolate; background: var(--surface); border: 1.5px solid color-mix(in srgb, var(--brand) 40%, var(--line)); border-radius: var(--radius); padding: clamp(16px, 2.4vw, 24px); display: grid; gap: 20px; transition: background-color .5s; }
+  /* Фон дашборда — та же сетка с лентами, что на фото; графики лежат на полупрозрачной подложке */
+  .dash-mesh { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+  .dash-mesh svg { width: 100%; height: 100%; display: block; }
+  .dash-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; }
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  /* Плашки показателей чуть темнее фона: лёгкая примесь фирменного цвета */
+  .kpi { border: 1px solid color-mix(in srgb, var(--brand) 18%, var(--line)); border-radius: 14px; padding: 12px 14px; background: color-mix(in srgb, var(--brand) 9%, var(--bg)); transition: background-color .5s; }
+  .kpi b { display: block; font-size: 24px; font-weight: 500; letter-spacing: -.02em; color: var(--brand); font-variant-numeric: tabular-nums; }
+  .kpi span { font-size: 12px; color: var(--muted); line-height: 1.3; display: block; }
+  .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .chart { border: 1px solid var(--line); border-radius: 14px; padding: 14px; min-width: 0; background: color-mix(in srgb, var(--surface) 82%, transparent); }
+  .scroll-x { overflow-x: auto; }
+  .scroll-x svg { width: 100%; height: auto; display: block; }
+  @media (max-width: 560px) { .scroll-x svg { min-width: 480px; } }
+  .chart text { font-family: var(--mono); font-size: 10px; fill: var(--muted); }
+  .chart .val { fill: var(--ink); font-size: 9.5px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 6px 0 10px; font-size: 12px; color: var(--muted); }
+  .legend i { display: inline-block; width: 11px; height: 11px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+  .lg-tick { height: 2px !important; vertical-align: 3px !important; background: var(--ink); }
+  .lg-hatch { background: repeating-linear-gradient(45deg, var(--brand-3) 0 2px, transparent 2px 4px); outline: 1px solid var(--brand-3); }
+  .lg-bar { background: var(--bar); outline: 1px dashed var(--muted); outline-offset: -1px; }
+
+  .note { font-size: 12px; color: var(--muted); }
+
+  /* Контакты */
+  .contact h2 { margin-block: 10px 12px; }
+  .contact p { color: rgba(255, 255, 255, .82); max-width: 40ch; }
+  footer { padding-block: 28px 36px; }
+  footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; }
+
+  /* ===== Телефон и планшет ===== */
+  @media (max-width: 1000px) {
+    .cards { grid-template-columns: repeat(2, 1fr); }
+    .charts { gap: 12px; }
+    .chart { padding: 12px 10px; }
+  }
+  @media (max-width: 860px) {
+    nav { display: none; }
+    .pal { margin-left: auto; }
+    .hero, .case-intro, .charts { grid-template-columns: 1fr; }
+    .hero { padding-block: 36px 56px; gap: 40px; }
+    .portrait { justify-self: center; width: min(320px, calc(86% - 22px)); }
+    .portrait .glass { bottom: 5%; left: 10px; right: 10px; }
+    .kpis { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 560px) {
+    .cards, .groups { grid-template-columns: 1fr; }
+    .pal button span { display: none; }
+    .pal button { padding: 6px 9px; }
+    .band { border-radius: 22px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <!-- Плашки: крупная рябь + «песок» из точек, которые разносят картинку на зёрна -->
+  <filter id="grainGlass" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+    <feTurbulence type="fractalNoise" baseFrequency="0.006 0.016" numOctaves="2" seed="8" result="wave"/>
+    <feTurbulence type="fractalNoise" baseFrequency="0.32" numOctaves="2" seed="3" result="sand"/>
+    <feComponentTransfer in="sand" result="dots">
+      <feFuncR type="discrete" tableValues="0 .5 1"/>
+      <feFuncG type="discrete" tableValues="0 .5 1"/>
+    </feComponentTransfer>
+    <feComposite in="wave" in2="dots" operator="arithmetic" k1="0" k2=".42" k3=".58" k4="0" result="map"/>
+    <feDisplacementMap in="SourceGraphic" in2="map" scale="120" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+
+<header>
+  <div class="wrap bar">
+    <a class="logo" href="#top">МАРГАРИТА</a>
+    <nav aria-label="Разделы">
+      <a href="#work">Чем занимаюсь</a>
+      <a href="#case">Кейс</a>
+      <a href="#contact">Контакты</a>
+    </nav>
+    <div class="pal" role="group" aria-label="Цветовая гамма">
+      <button type="button" data-pal="bordo"><i style="background:#6b1626"></i><span>Бордо</span></button>
+      <button type="button" data-pal="sage"><i style="background:#47522a"></i><span>Шалфей</span></button>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+  <!-- Первый экран -->
+  <div class="wrap hero">
+    <div>
+      <span class="mono">[ портфолио · 2026 ]</span>
+      <h1>Маргарита</h1>
+      <p class="lead">
+        <b>Ведущий специалист АНО «Федеральный центр компетенций в сфере производительности труда».</b>
+        Организую коммерческие обучения, веду учёт ресурсов проектов на внутренних платформах и строю аналитику,
+        по которой руководитель видит, что происходит с планом, лидами и выручкой.
+      </p>
+      <p class="motto">Порядок в процессах, прозрачность в цифрах: от заявки на обучение до закрытия проекта.</p>
+      <div class="actions">
+        <a class="btn accent" href="#case">Смотреть кейс →</a>
+        <a class="btn" href="#contact">Связаться</a>
+      </div>
+    </div>
+
+    <figure class="portrait">
+      <div class="frame" id="photoFrame">
+        <img class="clear" src="photo.jpg" alt="Маргарита, портрет" width="885" height="1000">
+        <div class="mesh" id="photoMesh" aria-hidden="true"></div>
+      </div>
+      <div class="glass" data-backdrop="photoFrame">
+        <div class="glass-body">
+          <span class="mono">[ ведущий специалист · ФЦК ]</span>
+          <div class="pfacts">
+            <div><b>4</b><span>направления работы</span></div>
+            <div><b>12</b><span>показателей в дашборде</span></div>
+            <div><b>Учёт</b><span>ресурсов в системах проекта</span></div>
+          </div>
+        </div>
+      </div>
+    </figure>
+  </div>
+
+  <!-- Чем занимаюсь -->
+  <section id="work">
+    <div class="wrap">
+      <div class="band">
+        <div class="blobs" id="workBlobs" aria-hidden="true"><i class="b1"></i><i class="b2"></i><i class="b3"></i><i class="b4"></i><i class="b5"></i></div>
+        <div class="sec-head">
+          <h2>Чем занимаюсь</h2>
+          <span class="mono">[ ключевые направления ]</span>
+        </div>
+        <div class="cards">
+          <article class="glass" data-backdrop="workBlobs">
+            <div class="glass-body"><span class="num">01</span><h3>Коммерческие обучения</h3><p>Организую обучения для заказчиков: от заявки и согласования до проведения и закрывающих документов.</p></div>
+          </article>
+          <article class="glass" data-backdrop="workBlobs">
+            <div class="glass-body"><span class="num">02</span><h3>Администрирование проектов</h3><p>Слежу за сроками, документами и порядком в проектах, чтобы ничего не терялось между этапами.</p></div>
+          </article>
+          <article class="glass" data-backdrop="workBlobs">
+            <div class="glass-body"><span class="num">03</span><h3>Учёт ресурсов проектов</h3><p>Контролирую и закрываю списание ресурсов на конкретные проекты во внутренних платформах и системах проекта, чтобы затраты были видны по каждому из них.</p></div>
+          </article>
+          <article class="glass" data-backdrop="workBlobs">
+            <div class="glass-body"><span class="num">04</span><h3>Аналитика данных</h3><p>Анализирую клиентов, план-факт и результаты вебинаров. Превращаю выгрузки в понятные отчёты и дашборды.</p></div>
+          </article>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Кейс -->
+  <section id="case">
+    <div class="wrap">
+      <div class="case-intro">
+        <div>
+          <span class="mono">[ кейс · план · лиды · выручка ]</span>
+          <h2>Дашборд продаж</h2>
+          <p>Задача: руководителю нужно в одном окне видеть, выполняется ли план, как менеджеры работают с лидами и откуда приходят деньги.</p>
+        </div>
+        <div>
+          <p class="ticks-title">12 показателей дашборда в пяти группах:</p>
+          <div class="groups">
+            <div class="grp"><span class="cnt">3</span><div><b>План и поступления</b><span>план-факт по месяцам, накопительный итог, контрактация</span></div></div>
+            <div class="grp"><span class="cnt">2</span><div><b>Выручка</b><span>по видам услуг и по источникам лида</span></div></div>
+            <div class="grp"><span class="cnt">2</span><div><b>Продажи</b><span>воронка продаж и конверсия от лида до договора</span></div></div>
+            <div class="grp"><span class="cnt">2</span><div><b>Менеджеры</b><span>работа с лидами и результаты каждого менеджера</span></div></div>
+            <div class="grp"><span class="cnt">3</span><div><b>Спрос</b><span>тема запроса, канал поступления, «откуда узнали»</span></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dash">
+        <div class="dash-mesh" id="dashMesh" aria-hidden="true"></div>
+        <div class="dash-head"><span class="mono">Дашборд · демо</span></div>
+        <div class="kpis">
+          <div class="kpi"><b id="kpiPlan">—</b><span>выполнение плана за год</span></div>
+          <div class="kpi"><b id="kpiSum">—</b><span>поступления, млн ₽</span></div>
+          <div class="kpi"><b>9 %</b><span>конверсия лид → договор</span></div>
+          <div class="kpi"><b>38</b><span>договоров заключено</span></div>
+        </div>
+
+        <div class="charts">
+          <div class="chart">
+            <div class="scroll-x"><svg id="planFact" viewBox="0 0 520 280" role="img" aria-label="Выполнение плана по месяцам, условные данные"></svg></div>
+          </div>
+          <div class="chart">
+            <div class="scroll-x"><svg id="cumulative" viewBox="0 0 520 280" role="img" aria-label="Поступления по видам услуг нарастающим итогом, условные данные"></svg></div>
+          </div>
+        </div>
+
+        <p class="note">Цифры условные: структура повторяет рабочий дашборд, реальные данные не публикуются. Суммы — в млн ₽.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Контакты -->
+  <section id="contact">
+    <div class="wrap">
+      <div class="band contact">
+        <div class="blobs" id="contactBlobs" aria-hidden="true"><i class="b1"></i><i class="b2"></i><i class="b3"></i><i class="b4"></i><i class="b5"></i></div>
+        <div>
+          <span class="mono" style="color:rgba(255,255,255,.7)">[ открыта к новым задачам ]</span>
+          <h2>Обсудим работу?</h2>
+          <p>Обучения, порядок в проектах, учёт ресурсов и аналитика — буду рада обсудить вашу задачу.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span class="mono">© 2026 Маргарита</span>
+    <span class="mono">Сайт сделан вместе с Claude Code</span>
+  </div>
+</footer>
+
+<script>
+  const root = document.documentElement;
+
+  // ===== Сетка (по референсу): изогнутая сетка + ленты из тонких линий — на фото и фоном дашборда.
+  // Рисуется до копирования в стекло. c — цвета: grid, rib, soft и их непрозрачность
+  function meshSvg(W, H, cell, c) {
+    // Плавное смещение точки: несколько волн и один «вихрь» — сетка изгибается, как ткань
+    const warp = (x, y) => {
+      let dx = 26 * Math.sin(y / 130 + x / 240) + 16 * Math.sin((x + y) / 180);
+      let dy = 22 * Math.cos(x / 150 - y / 290) + 14 * Math.sin(x / 100 + 1);
+      const cx = 150, cy = 170, r2 = (x - cx) ** 2 + (y - cy) ** 2, k = 60 * Math.exp(-r2 / 26000);
+      dx += k * (y - cy) / 120; dy -= k * (x - cx) / 120;
+      return [x + dx, y + dy];
+    };
+    const line = pts => 'M' + pts.map(([x, y]) => x.toFixed(1) + ' ' + y.toFixed(1)).join('L');
+    let grid = '';
+    for (let y0 = -80; y0 <= H + 80; y0 += cell) { const p = []; for (let x = -80; x <= W + 80; x += 12) p.push(warp(x, y0)); grid += line(p); }
+    for (let x0 = -80; x0 <= W + 80; x0 += cell) { const p = []; for (let y = -80; y <= H + 80; y += 12) p.push(warp(x0, y)); grid += line(p); }
+    // Ленты: пучок почти параллельных кривых и мягкая тень под ним
+    // Точки лент заданы для поля 600×678 и растягиваются под нужный размер
+    const fit = pts => pts.map(([x, y]) => [(x / 600 * W).toFixed(1), (y / 678 * H).toFixed(1)]);
+    const ribbons = [
+      [[-40, 200], [150, 170], [260, 360], [380, 400], [500, 450], [560, 560], [640, 600]],
+      [[330, 300], [380, 400], [420, 500], [440, 580], [460, 660], [470, 700], [480, 720]],
+      [[-40, 500], [60, 540], [140, 610], [210, 680], [230, 700], [240, 710], [250, 720]]
+    ].map(fit);
+    let rib = '', soft = '';
+    ribbons.forEach(([a, b, c, d, e, f, g]) => {
+      soft += `<path d="M${a}C${b} ${c} ${d}S${f} ${g}" stroke-width="60"/>`;
+      for (let k = 0; k < 24; k++) {
+        const o = k * 1.6, t = Math.sin(k / 24 * Math.PI) * 12;
+        const sh = ([x, y]) => `${+x + o * .4 - t * .3} ${+y + o + t}`;
+        rib += `M${sh(a)}C${sh(b)} ${sh(c)} ${sh(d)}S${sh(f)} ${sh(g)}`;
+      }
+    });
+    return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid slice">
+        <defs><filter id="meshSoft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="16"/></filter></defs>
+        <g fill="none" stroke="${c.soft}" opacity="${c.softA}" filter="url(#meshSoft)">${soft}</g>
+        <path d="${grid}" fill="none" stroke="${c.grid}" stroke-width=".8" opacity="${c.gridA}" vector-effect="non-scaling-stroke"/>
+        <path d="${rib}" fill="none" stroke="${c.rib}" stroke-width=".6" opacity="${c.ribA}" vector-effect="non-scaling-stroke"/>
+      </svg>`;
+  }
+  // На фото линии светлые, на светлом дашборде — серые и приглушённые, чтобы графики читались
+  document.getElementById('photoMesh').innerHTML = meshSvg(600, 678, 22, { grid: 'var(--surface)', gridA: .6, rib: 'var(--brand-4)', ribA: .6, soft: 'var(--brand-4)', softA: .4 });
+  document.getElementById('dashMesh').innerHTML = meshSvg(1200, 560, 26, { grid: 'var(--mesh)', gridA: .45, rib: 'var(--brand-3)', ribA: .3, soft: 'var(--brand-4)', softA: .35 });
+
+  // ===== Плашки: копия подложки внутри каждой, совмещённая с оригиналом =====
+  const glasses = [...document.querySelectorAll('.glass[data-backdrop]')];
+  glasses.forEach(g => {
+    const src = document.getElementById(g.dataset.backdrop);
+    const fx = document.createElement('div');
+    fx.className = 'glass-fx';
+    fx.setAttribute('aria-hidden', 'true');
+    const clone = document.createElement('div');
+    clone.className = 'clone';
+    const copy = src.cloneNode(true);
+    copy.removeAttribute('id');
+    copy.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
+    clone.appendChild(copy);
+    fx.appendChild(clone);
+    const grain = document.createElement('div');
+    grain.className = 'grain';
+    g.prepend(fx, grain);
+    g._src = src;
+  });
+  function layout() {
+    glasses.forEach(g => {
+      const fx = g.firstElementChild, clone = fx.firstElementChild;
+      const b = g._src.getBoundingClientRect(), f = fx.getBoundingClientRect();
+      clone.style.left = (b.left - f.left) + 'px';
+      clone.style.top = (b.top - f.top) + 'px';
+      clone.style.width = b.width + 'px';
+      clone.style.height = b.height + 'px';
+    });
+  }
+  let raf = 0;
+  const layoutSoon = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(layout); };
+  addEventListener('resize', layoutSoon);
+  addEventListener('load', layout);
+  document.fonts && document.fonts.ready.then(layout);
+  if ('ResizeObserver' in window) {
+    const ro = new ResizeObserver(layoutSoon);
+    glasses.forEach(g => { ro.observe(g); ro.observe(g._src); });
+  }
+  layout();
+
+  // ===== Гамма (запоминается в браузере) =====
+  const palBtns = document.querySelectorAll('.pal button');
+  function setPal(p) {
+    root.dataset.pal = p;
+    palBtns.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.pal === p)));
+    try { localStorage.setItem('glass-pal', p); } catch (e) {}
+  }
+  palBtns.forEach(b => b.addEventListener('click', () => setPal(b.dataset.pal)));
+  let savedPal = null;
+  try { savedPal = localStorage.getItem('glass-pal'); } catch (e) {}
+  setPal(savedPal === 'sage' ? 'sage' : 'bordo');
+
+  // ===== Дашборд (демо-данные, условные; суммы в млн ₽) =====
+  const months = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+  const plan = [0.5, 2.0, 3.0, 4.5, 5.0, 7.5, 4.0, 5.5, 7.0, 9.0, 12.0, 11.0];
+  const fact = [0.4, 2.1, 2.4, 4.8, 5.6, 8.1, 3.9, 4.9, 7.6, 10.4, 15.2, 11.6];
+  const contracted = [0, 0.3, 0, 0.6, 0, 0.2, 0, 0.8, 0, 0, 0, 1.6];
+  // Значения без десятичных знаков
+  const fmt = v => Math.round(v).toLocaleString('ru-RU');
+  const sum = a => a.reduce((s, x) => s + x, 0);
+  document.getElementById('kpiPlan').textContent = Math.round(sum(fact) / sum(plan) * 100) + ' %';
+  document.getElementById('kpiSum').textContent = fmt(sum(fact));
+
+  // План-факт: серый столбик — факт до плана, пунктир — недобор, фирменный цвет — сверх плана,
+  // чёрточка с «усами» — план, штриховка — законтрактовано; под месяцем — отклонение от плана
+  // Общая разметка для обоих графиков: одинаковые поля, нулевая линия и колонки месяцев — графики стоят вровень
+  const G = { W: 520, H: 280, left: 34, right: 8, base: 232, top: 26 };
+  G.step = (G.W - G.left - G.right) / months.length;
+  G.mid = i => G.left + i * G.step + G.step / 2;
+  function axes(max, stepV, y) {
+    let s = '';
+    for (let v = 0; v <= max + 1e-9; v += stepV) s += `<line x1="${G.left}" x2="${G.W - G.right}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${G.left - 6}" y="${y(v) + 3}" text-anchor="end">${v}</text>`;
+    months.forEach((m, i) => { s += `<text x="${G.mid(i)}" y="${G.base + 16}" text-anchor="middle">${m}</text>`; });
+    return s;
+  }
+
+  (function () {
+    const { W, base, top } = G, max = 20;
+    const y = v => base - (base - top) * v / max;
+    const step = G.step, bw = step * .52;
+    let s = `<defs><pattern id="hatch" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="1.8" height="4" fill="var(--brand-3)"/></pattern></defs>`;
+    s += axes(max, 5, y);
+    months.forEach((m, i) => {
+      const x = G.mid(i) - bw / 2, p = plan[i], f = fact[i], c = contracted[i];
+      const low = Math.min(p, f);
+      s += `<rect x="${x}" y="${y(low)}" width="${bw}" height="${base - y(low)}" fill="var(--bar)" stroke="var(--muted)" stroke-width=".8" stroke-dasharray="3 2"><title>${m}: факт ${fmt(f)}, план ${fmt(p)}</title></rect>`;
+      if (f < p) s += `<rect x="${x}" y="${y(p)}" width="${bw}" height="${y(f) - y(p)}" fill="var(--surface)" stroke="var(--muted)" stroke-width=".8" stroke-dasharray="3 2"/>`;
+      if (f > p) s += `<rect x="${x}" y="${y(f)}" width="${bw}" height="${y(p) - y(f)}" fill="var(--brand)"/>`;
+      const topV = Math.max(p, f);
+      if (c) s += `<rect x="${x}" y="${y(topV + c)}" width="${bw}" height="${y(topV) - y(topV + c)}" fill="url(#hatch)" stroke="var(--brand-3)" stroke-width=".8"/>`;
+      const py = y(p);
+      s += `<path d="M${x - 3} ${py}H${x + bw + 3}M${x - 3} ${py - 3}v6M${x + bw + 3} ${py - 3}v6" stroke="var(--ink)" stroke-width="1.6" fill="none"/>`;
+      const ly = y(topV + c) - 8, lw = 26;
+      s += `<rect x="${x + bw / 2 - lw / 2}" y="${ly - 9}" width="${lw}" height="13" rx="2" fill="var(--surface)" stroke="var(--muted)" stroke-width=".6" stroke-dasharray="2 1.5"/>`;
+      s += `<text class="val" x="${x + bw / 2}" y="${ly + 1}" text-anchor="middle">${fmt(f)}</text>`;
+      const dev = Math.round((f / p - 1) * 100);
+      s += `<text x="${x + bw / 2}" y="${base + 30}" text-anchor="middle" style="fill:${dev >= 0 ? 'var(--brand)' : 'var(--muted)'}">${dev > 0 ? '+' : ''}${dev}%</text>`;
+    });
+    document.getElementById('planFact').innerHTML = s;
+  })();
+
+  // Накопительный итог по видам услуг: слои друг на друге, каждый — сумма с начала года (без подписей услуг)
+  (function () {
+    const services = ['var(--brand-4)', 'var(--bar)', 'var(--brand-3)', 'var(--brand-2)', 'var(--brand)'];
+    const baseShare = [.03, .24, .14, .29, .30];
+    // Доли услуг немного меняются от месяца к месяцу, в сумме дают факт месяца
+    const monthly = fact.map((f, m) => {
+      const raw = baseShare.map((b, k) => b * (1 + .35 * Math.sin(m * .9 + k * 1.7)));
+      const t = sum(raw);
+      return raw.map(r => f * r / t);
+    });
+    const cum = services.map((_, k) => { let a = 0; return monthly.map(row => (a += row[k])); });
+    const { base, top } = G;
+    const total = sum(fact), max = Math.ceil(total / 20) * 20;
+    const x = G.mid;
+    const y = v => base - (base - top) * v / max;
+    let s = axes(max, 20, y);
+    const stackTop = services.map((_, k) => months.map((__, i) => sum(cum.slice(0, k + 1).map(c => c[i]))));
+    services.forEach((color, k) => {
+      const upper = stackTop[k].map((v, i) => `${x(i)},${y(v)}`);
+      const lower = (k ? stackTop[k - 1] : months.map(() => 0)).map((v, i) => `${x(i)},${y(v)}`).reverse();
+      s += `<polygon points="${upper.concat(lower).join(' ')}" fill="${color}" stroke="var(--surface)" stroke-width=".8"/>`;
+    });
+    s += `<text class="val" x="${x(11) - 4}" y="${y(total) - 6}" text-anchor="end">${fmt(total)}</text>`;
+    document.getElementById('cumulative').innerHTML = s;
+  })();
+</script>
+</body>
+</html>
