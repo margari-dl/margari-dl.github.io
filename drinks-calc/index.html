@@ -141,7 +141,7 @@ input[readonly]{background:#F4F0E2!important;border-color:transparent!important;
     <h2><span class="num">1</span><span id="h1t">Показатели напитка</span></h2>
     <p class="sub" id="h1s">Корректируется готовый напиток.</p>
     <div class="g" style="margin-bottom:14px">
-      <label><span id="v0l">Объём сейчас, л</span><input id="v0" inputmode="decimal"></label>
+      <label><span id="v0l">Объём сейчас, л</span><input id="v0" inputmode="decimal" placeholder="введите"></label>
       <label><span id="vtl">Итоговый объём, л</span><input id="vt" inputmode="decimal" placeholder="авто"></label>
     </div>
     <div class="tbl">
@@ -202,11 +202,11 @@ $('sy').value='65';
 
 // Строки и значения по умолчанию (из технологических карт)
 const DEF={
- alc:{v0:'1000',vt:'',rows:[
+ alc:{v0:'',vt:'',rows:[
   ['A','Объёмная доля этилового спирта','%','','6,8','7,0'],
   ['E','Действительный экстракт','%','','6,7','7,2'],
   ['K','Кислотность','см³','','6,1','6,6']]},
- soft:{v0:'1000',vt:'',rows:[
+ soft:{v0:'',vt:'',rows:[
   ['E','Массовая доля с/в','в свежеприготовленном сиропе, %','','',''],
   ['K','Кислотность','см³','','','']]}
 };
@@ -280,7 +280,7 @@ function calc(){
   const V0=n('v0'),Vt=n('vt'),By=parseFloat($('sy').value),As=soft?Infinity:n('as');
   const fail=t=>{warns.push(t);say();tb.innerHTML=rowsOut(null);};
   if(!act.length){if(!badS.length)warns.push(soft?'Введите фактические значения и стандарт, чтобы получить расчёт.':'Введите фактические значения, чтобы получить расчёт.');say();tb.innerHTML=rowsOut(null);return;}
-  if(!(V0>0))return fail('Укажите объём.');
+  if(!(V0>0))return fail(soft?'Укажите объём сиропа.':'Укажите объём напитка.');
   const aA=!soft&&P.A.on, aE=P.E.on, aK=P.K.on;
   if(aA&&!(As>0&&As<=100))return fail('Укажите крепость спирта.');
   if(aA&&(P.A.hi>=As||P.A.f>As))return fail('Крепость спирта должна быть выше крепости напитка.');
