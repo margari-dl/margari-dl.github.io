@@ -150,7 +150,7 @@ input[readonly]{background:#F4F0E2!important;border-color:transparent!important;
       <tbody id="rows"></tbody>
     </table>
     </div>
-    <div class="tools"><button type="button" class="reset" onclick="resetFacts()">↺ Сбросить фактические значения</button><span class="note" id="stdNote" style="margin:0">Стандарт можно менять вручную под любой продукт.</span></div>
+    <div class="tools"><button type="button" class="reset" onclick="resetFacts()" id="resetBtn">↺ Сбросить фактические значения</button><span class="note" id="stdNote" style="margin:0">Стандарт можно менять вручную под любой продукт.</span></div>
   </div>
 
 
@@ -223,6 +223,7 @@ function build(){
    <td data-l="Фактически"><input class="f" inputmode="decimal" placeholder="факт" value="${r[3]}"></td>
    <td class="st" data-l="Стандарт от – до"><div class="rng"><input class="mn" inputmode="decimal" placeholder="от" value="${r[4]}"${ro}> – <input class="mx" inputmode="decimal" placeholder="до" value="${r[5]}"${ro}></div></td><td class="now"></td></tr>`;}).join('');
   $('stdNote').style.display=lock?'none':'';
+  $('resetBtn').textContent=lock?'↺ Сбросить фактические значения':'↺ Сброс значений';
   const soft=type==='soft';
   $('h1t').textContent=soft?'Показатели купажного сиропа':'Показатели напитка';
   $('h1s').textContent=soft?'Корректируется купажный сироп.':'Корректируется готовый напиток.';
@@ -326,7 +327,7 @@ function calc(){
   if(P.K.hasF)out.K=(V0*k0+m)/V/KF;
   tb.innerHTML=rowsOut(out)+`<tr><td class="p">Объём, л</td><td data-l="Было">${f(V0,1)}</td><td data-l="Станет"><b>${f(V,2)}</b></td><td></td><td></td></tr>`;
 }
-function resetFacts(){for(const i of $('rows').querySelectorAll('input.f'))i.value='';calc();const first=$('rows').querySelector('input.f');if(first)first.focus();}
+function resetFacts(){const sel=type==='soft'?'input.f,input.mn,input.mx':'input.f';for(const i of $('rows').querySelectorAll(sel)){i.value='';i.classList.remove('bad');}calc();const first=$('rows').querySelector('input.f');if(first)first.focus();}
 document.addEventListener('focusout',e=>{const t=e.target;if(t.matches&&t.matches('input.mn,input.mx')){const v=num(t.value);if(isFinite(v))t.value=(Math.round(v*10)/10).toLocaleString('ru-RU',{maximumFractionDigits:1});}});
 ['input','change','keyup','paste','cut','focusout'].forEach(ev=>document.addEventListener(ev,()=>{calc();setTimeout(calc,0);}));
 let lastSig='';setInterval(()=>{const sig=[...document.querySelectorAll('input,select')].map(i=>i.value).join('|')+type;if(sig!==lastSig){lastSig=sig;calc();}},400);
