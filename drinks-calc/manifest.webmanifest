@@ -1,0 +1,17 @@
+{
+  "name": "Корректировка купажа и сиропа",
+  "short_name": "Корректировка",
+  "description": "Калькулятор корректировки алкогольных и безалкогольных напитков: крепость, экстракт, кислотность.",
+  "lang": "ru",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#FFC61A",
+  "theme_color": "#FFC61A",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
