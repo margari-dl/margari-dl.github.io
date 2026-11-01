@@ -268,7 +268,7 @@ function calc(){
   const rowsOut=out=>keys.map(k=>{const o=P[k];
     const was=o.hasF?f(o.f,2):'<span style="color:var(--muted)">не введено</span>';
     const will=o.on&&out?`<b>${f(out[k],2)}</b>`:(out&&o.hasF&&out[k]!==undefined?`<b>${f(out[k],2)}</b>`:'—');
-    const goal=o.hasS?(soft?f(o.mn,1)+' – '+f(o.mx,1):o.mn.toLocaleString('ru-RU',{minimumFractionDigits:1})+' – '+o.mx.toLocaleString('ru-RU',{minimumFractionDigits:1})):'<span style="color:var(--muted)">не указан</span>';
+    const goal=o.hasS?(soft?f(o.mn,1)+' – '+f(o.mx,1):o.mn.toLocaleString('ru-RU',{minimumFractionDigits:1})+' – '+o.mx.toLocaleString('ru-RU',{minimumFractionDigits:1}))+`<br><small style="color:var(--muted);font-weight:600">середина ${f((o.mn+o.mx)/2,2)}</small>`:'<span style="color:var(--muted)">не указан</span>';
     const t=o.on&&out?tag(inStd(out[k],o.mn,o.mx)):'';
     return `<tr><td class="p">${o.name}</td><td data-l="Было">${was}</td><td data-l="Станет">${will}</td><td data-l="Цель">${goal}</td><td class="tg">${t}</td></tr>`;}).join('');
 
@@ -286,24 +286,37 @@ function calc(){
 
   // крепость для пересчёта экстракта (если не введена — по стандарту или 0)
   const Aref=soft?0:(P.A.hasF?P.A.f:(P.A.hasS?(P.A.mn+P.A.mx)/2:0));
-  const A0=aA?P.A.f/100:0, Alo=aA?P.A.lo/100:0, Ahi=aA?P.A.hi/100:0, as=As/100;
+  const A0=aA?P.A.f/100:0, as=As/100;
   const Sy=xFromE(By,0);
-  const x0=P.E.hasF?xFromE(P.E.f,Aref):0, xlo=aE?xFromE(P.E.lo,Aref):0, xhi=aE?xFromE(P.E.hi,Aref):0;
-  const k0=P.K.hasF?P.K.f*KF:0, klo=aK?P.K.lo*KF:0, khi=aK?P.K.hi*KF:0;
-  if(aE&&xlo>=Sy)return fail('Стандарт по экстракту выше, чем в сиропе.');
-  if((aE&&xhi<=0&&x0>0)||(aK&&khi<=0&&k0>0)||(aA&&Ahi<=0&&A0>0))return fail('Верхняя граница стандарта должна быть больше 0.');
-
-  const need=V=>({s:aA?Math.max(0,(V*Alo-V0*A0)/as):0,y:aE?Math.max(0,(V*xlo-V0*x0)/Sy):0,m:aK?Math.max(0,V*klo-V0*k0):0});
-  const water=V=>{const q=need(V);return V-V0-q.s-q.y;};
-  if(1-(aA?Alo/as:0)-(aE?xlo/Sy:0)<=0)return fail('Такой стандарт недостижим этими добавками.');
-  let Vmin=V0;
-  if(aA&&Ahi>0)Vmin=Math.max(Vmin,V0*A0/Ahi);
-  if(aE&&xhi>0)Vmin=Math.max(Vmin,V0*x0/xhi);
-  if(aK&&khi>0)Vmin=Math.max(Vmin,V0*k0/khi);
-  if(water(Vmin)<0){let lo=Vmin,hi=Vmin*2;while(water(hi)<0)hi*=2;for(let i=0;i<100;i++){const mid=(lo+hi)/2;if(water(mid)<0)lo=mid;else hi=mid;}Vmin=hi;}
-  let V=Vmin;
-  if(isFinite(Vt)){if(Vt+1e-6<Vmin)warns.push(`Итоговый объём ${f(Vt,1)} л недостижим: чтобы попасть в стандарт, нужно не меньше ${f(Vmin,2)} л. Расчёт сделан для ${f(Vmin,2)} л.`);else V=Vt;}
-
+  const x0=P.E.hasF?xFromE(P.E.f,Aref):0;
+  const k0=P.K.hasF?P.K.f*KF:0;
+  // Окно цели: t=1 — к середине стандарта, t=0 — к ближайшей границе стандарта
+  const win=(o,t)=>{const mid=(o.mn+o.mx)/2;if(o.f<o.mn)return[o.mn+t*(mid-o.mn),o.mx];if(o.f>o.mx)return[o.mn,o.mx-t*(o.mx-mid)];return[o.mn,o.mx];};
+  const solve=t=>{
+    const [aL,aH]=aA?win(P.A,t):[0,0], [eL,eH]=aE?win(P.E,t):[0,0], [kL,kH]=aK?win(P.K,t):[0,0];
+    const Alo=aL/100,Ahi=aH/100,xlo=aE?xFromE(eL,Aref):0,xhi=aE?xFromE(eH,Aref):0,klo=kL*KF,khi=kH*KF;
+    if(aE&&xlo>=Sy)return{err:'Стандарт по экстракту выше, чем в сиропе.'};
+    if((aE&&xhi<=0&&x0>0)||(aK&&khi<=0&&k0>0)||(aA&&Ahi<=0&&A0>0))return{err:'Верхняя граница стандарта должна быть больше 0.'};
+    if(1-(aA?Alo/as:0)-(aE?xlo/Sy:0)<=0)return{err:'Такой стандарт недостижим этими добавками.'};
+    const need=V=>({s:aA?Math.max(0,(V*Alo-V0*A0)/as):0,y:aE?Math.max(0,(V*xlo-V0*x0)/Sy):0,m:aK?Math.max(0,V*klo-V0*k0):0});
+    const water=V=>{const q=need(V);return V-V0-q.s-q.y;};
+    let Vm=V0;
+    if(aA&&Ahi>0)Vm=Math.max(Vm,V0*A0/Ahi);
+    if(aE&&xhi>0)Vm=Math.max(Vm,V0*x0/xhi);
+    if(aK&&khi>0)Vm=Math.max(Vm,V0*k0/khi);
+    if(water(Vm)<0){let lo=Vm,hi=Vm*2;while(water(hi)<0)hi*=2;for(let i=0;i<100;i++){const mid=(lo+hi)/2;if(water(mid)<0)lo=mid;else hi=mid;}Vm=hi;}
+    return{Vmin:Vm,need};
+  };
+  let t=1,S=solve(1);
+  if(S.err)return fail(S.err);
+  if(isFinite(Vt)&&S.Vmin>Vt+1e-6){
+    const S0=solve(0);
+    if(S0.err)return fail(S0.err);
+    if(S0.Vmin>Vt+1e-6){t=0;S=S0;warns.push(`Итоговый объём ${f(Vt,1)} л мал: даже до границы стандарта нужно не меньше ${f(S.Vmin,2)} л. Расчёт сделан для ${f(S.Vmin,2)} л.`);}
+    else{let lo=0,hi=1;for(let i=0;i<40;i++){const m=(lo+hi)/2,r=solve(m);if(!r.err&&r.Vmin<=Vt+1e-6)lo=m;else hi=m;}t=lo;S=solve(t);
+      warns.push(`Чтобы уложиться в итоговый объём ${f(Vt,1)} л, показатели доведены ближе к границе стандарта, а не к середине.`);}
+  }
+  const need=S.need;let V=S.Vmin;
   const cl=x=>Math.abs(x)<1e-7?0:x;
   const q=need(V), Vs=cl(q.s), Vy=cl(q.y), m=cl(q.m), Vw=cl(V-V0-Vs-Vy);
   const nothing=Vs===0&&Vy===0&&m===0&&Vw===0;
