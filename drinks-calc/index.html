@@ -125,6 +125,8 @@ input[readonly]{background:#F4F0E2!important;border-color:transparent!important;
 .fld .lbl{font-size:15.5px;font-weight:700;color:var(--navy)}
 .vbtns{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .vbtns button{font:inherit;font-size:17px;font-weight:800;min-height:48px;border-radius:14px;border:2px solid var(--line);background:#fff;color:var(--navy);cursor:pointer}
+.vbtns button{white-space:nowrap}
+@media (max-width:640px){.g .fld.tank{grid-column:1/-1}}
 .vbtns button.on{background:var(--purple);border-color:var(--purple);color:#fff}
 </style>
 </head>
@@ -147,7 +149,7 @@ input[readonly]{background:#F4F0E2!important;border-color:transparent!important;
     <p class="sub" id="h1s">Корректируется готовый напиток.</p>
     <div class="g" style="margin-bottom:14px">
       <label><span id="v0l">Объём сейчас, л</span><input id="v0" inputmode="decimal"></label>
-      <div class="fld"><span id="vtl" class="lbl">Итоговый объём, л</span><input id="vt" readonly tabindex="-1" value="49 000"><div id="vtBtns" class="vbtns"><button type="button" data-v="15000" class="on">15 000 л</button><button type="button" data-v="49000">49 000 л</button></div></div>
+      <div class="fld tank"><span id="vtl" class="lbl">Итоговый объём, л</span><input id="vt" readonly tabindex="-1" value="49 000"><div id="vtBtns" class="vbtns"><button type="button" data-v="15000" class="on">15 000 л</button><button type="button" data-v="49000">49 000 л</button></div></div>
     </div>
     <div class="tbl">
     <table class="stack">
