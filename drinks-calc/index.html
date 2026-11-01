@@ -298,7 +298,9 @@ function calc(){
   const x0=P.E.hasF?xFromE(P.E.f,Aref):0;
   const k0=P.K.hasF?P.K.f*KF:0;
   // Окно цели: t=1 — к середине стандарта, t=0 — к ближайшей границе стандарта
-  const win=(o,t)=>{const mid=(o.mn+o.mx)/2;if(o.f<o.mn)return[o.mn+t*(mid-o.mn),o.mx];if(o.f>o.mx)return[o.mn,o.mx-t*(o.mx-mid)];return[o.mn,o.mx];};
+  // Если хоть один показатель вне стандарта — все показатели ведём к середине стандарта
+  const anyOut=act.some(k=>P[k].f<P[k].mn||P[k].f>P[k].mx);
+  const win=(o,t)=>{if(!anyOut)return[o.mn,o.mx];const mid=(o.mn+o.mx)/2;return[o.mn+t*(mid-o.mn),o.mx-t*(o.mx-mid)];};
   const solve=t=>{
     const [aL,aH]=aA?win(P.A,t):[0,0], [eL,eH]=aE?win(P.E,t):[0,0], [kL,kH]=aK?win(P.K,t):[0,0];
     const Alo=aL/100,Ahi=aH/100,xlo=aE?xFromE(eL,Aref):0,xhi=aE?xFromE(eH,Aref):0,klo=kL*KF,khi=kH*KF;
