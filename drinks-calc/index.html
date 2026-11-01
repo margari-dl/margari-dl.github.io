@@ -121,6 +121,11 @@ h3{font-size:15px;margin:20px 0 6px;text-transform:uppercase;font-weight:900;col
 @media (max-width:640px){.reset{width:100%}}
 input.bad{border-color:var(--bad)!important;background:var(--bad-bg)!important}
 input[readonly]{background:#F4F0E2!important;border-color:transparent!important;color:var(--navy);cursor:default;box-shadow:none!important}
+.fld{display:flex;flex-direction:column;gap:6px}
+.fld .lbl{font-size:15.5px;font-weight:700;color:var(--navy)}
+.vbtns{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.vbtns button{font:inherit;font-size:17px;font-weight:800;min-height:48px;border-radius:14px;border:2px solid var(--line);background:#fff;color:var(--navy);cursor:pointer}
+.vbtns button.on{background:var(--purple);border-color:var(--purple);color:#fff}
 </style>
 </head>
 <body>
@@ -142,7 +147,7 @@ input[readonly]{background:#F4F0E2!important;border-color:transparent!important;
     <p class="sub" id="h1s">Корректируется готовый напиток.</p>
     <div class="g" style="margin-bottom:14px">
       <label><span id="v0l">Объём сейчас, л</span><input id="v0" inputmode="decimal"></label>
-      <label><span id="vtl">Итоговый объём, л</span><input id="vt" inputmode="decimal" ></label>
+      <div class="fld"><span id="vtl" class="lbl">Итоговый объём, л</span><input id="vt" readonly tabindex="-1" value="49 000"><div id="vtBtns" class="vbtns"><button type="button" data-v="15000" class="on">15 000 л</button><button type="button" data-v="49000">49 000 л</button></div></div>
     </div>
     <div class="tbl">
     <table class="stack">
@@ -215,7 +220,7 @@ let type='alc';
 
 function build(){
   const d=store[type]||DEF[type];
-  $('v0').value=d.v0;$('vt').value=d.vt;
+  $('v0').value=d.v0;
   const lock=type==='alc';
   $('rows').innerHTML=d.rows.map((r,i)=>{if(lock){r=r.slice();r[4]=DEF.alc.rows[i][4];r[5]=DEF.alc.rows[i][5];}
    const ro=lock?' readonly tabindex="-1" title="Стандарт задан и не меняется"':'';
@@ -227,14 +232,14 @@ function build(){
   $('h1t').textContent=soft?'Показатели купажного сиропа':'Показатели напитка';
   $('h1s').textContent=soft?'Корректируется купажный сироп.':'Корректируется готовый напиток.';
   $('v0l').textContent=soft?'Объём сиропа сейчас, л':'Объём напитка сейчас, л';
-  $('vtl').textContent='Итоговый объём, л';
+  $('vt').classList.toggle('hide',type==='soft');$('vtBtns').classList.toggle('hide',type!=='soft');
   
   document.querySelectorAll('.alc').forEach(e=>e.classList.toggle('hide',soft));
   document.querySelectorAll('.softonly').forEach(e=>e.classList.toggle('hide',!soft));
 }
 function save(){
   const rows=[...$('rows').rows].map((tr,i)=>{const b=(store[type]||DEF[type]).rows[i];return [b[0],b[1],b[2],tr.querySelector('.f').value,tr.querySelector('.mn').value,tr.querySelector('.mx').value];});
-  const o={v0:$('v0').value,vt:$('vt').value,rows};
+  const o={v0:$('v0').value,rows};
   store[type]=o;
 }
 document.querySelectorAll('#type button').forEach(b=>b.onclick=()=>{save();type=b.dataset.v;document.querySelectorAll('#type button').forEach(x=>x.classList.toggle('on',x===b));build();calc();});
@@ -276,7 +281,7 @@ function calc(){
   const skip=[...(missF.length<keys.length?missF.map(x=>x+' (нет факта)'):[]),...missS.map(x=>x+' (нет стандарта)')];
   if(skip.length&&act.length)warns.push('Не учитывается в расчёте: '+skip.join(', ')+'.');
 
-  const V0=n('v0'),Vt=n('vt'),By=parseFloat($('sy').value),As=soft?Infinity:n('as');
+  const tankBtn=document.querySelector('#vtBtns button.on'),V0=n('v0'),Vt=soft&&tankBtn?parseFloat(tankBtn.dataset.v):NaN,By=parseFloat($('sy').value),As=soft?Infinity:n('as');
   const fail=t=>{warns.push(t);say();tb.innerHTML=rowsOut(null);};
   if(!act.length){if(!badS.length)warns.push(soft?'Введите фактические значения и стандарт, чтобы получить расчёт.':'Введите фактические значения, чтобы получить расчёт.');say();tb.innerHTML=rowsOut(null);return;}
   if(!(V0>0))return fail(soft?'Укажите объём сиропа.':'Укажите объём напитка.');
@@ -312,9 +317,9 @@ function calc(){
   if(isFinite(Vt)&&S.Vmin>Vt+1e-6){
     const S0=solve(0);
     if(S0.err)return fail(S0.err);
-    if(S0.Vmin>Vt+1e-6){t=0;S=S0;warns.push(`Итоговый объём ${f(Vt,1)} л мал: даже до границы стандарта нужно не меньше ${f(S.Vmin,2)} л. Расчёт сделан для ${f(S.Vmin,2)} л.`);}
+    if(S0.Vmin>Vt+1e-6){t=0;S=S0;warns.push(`Итоговый объём ${f(Vt,0)} л мал: даже до границы стандарта нужно не меньше ${f(S.Vmin,2)} л. Расчёт сделан для ${f(S.Vmin,2)} л.`);}
     else{let lo=0,hi=1;for(let i=0;i<40;i++){const m=(lo+hi)/2,r=solve(m);if(!r.err&&r.Vmin<=Vt+1e-6)lo=m;else hi=m;}t=lo;S=solve(t);
-      warns.push(`Чтобы уложиться в итоговый объём ${f(Vt,1)} л, показатели доведены ближе к границе стандарта, а не к середине.`);}
+      warns.push(`Чтобы уложиться в итоговый объём ${f(Vt,0)} л, показатели доведены ближе к нижней границе стандарта, а не к середине.`);}
   }
   const need=S.need;let V=S.Vmin;
   const cl=x=>Math.abs(x)<1e-7?0:x;
@@ -337,9 +342,10 @@ function calc(){
   const Afd=soft?0:(out.A!==undefined?out.A:Aref);
   if(P.E.hasF)out.E=eFromX((V0*x0+Vy*Sy)/V,Afd);
   if(P.K.hasF)out.K=(V0*k0+m)/V/KF;
-  tb.innerHTML=rowsOut(out)+`<tr><td class="p">Объём, л</td><td data-l="Было">${f(V0,1)}</td><td data-l="Станет"><b>${f(V,2)}</b></td><td></td><td></td></tr>`;
+  tb.innerHTML=rowsOut(out)+`<tr><td class="p">Объём, л</td><td data-l="Было">${f(V0,1)}</td><td data-l="Станет"><b>${f(V,2)}</b></td><td data-l="Итоговый">${soft?(isFinite(Vt)?'не больше '+f(Vt,0):''):'49 000'}</td><td class="tg">${soft&&isFinite(Vt)?tag(V<=Vt+1e-6):''}</td></tr>`;
 }
-function resetFacts(){const sel=type==='soft'?'input.f,input.mn,input.mx':'input.f';for(const i of $('rows').querySelectorAll(sel)){i.value='';i.classList.remove('bad');}$('v0').value='';$('vt').value='';if(type==='alc')$('as').value='';calc();const first=$('rows').querySelector('input.f');if(first)first.focus();}
+document.querySelectorAll('#vtBtns button').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('#vtBtns button').forEach(x=>x.classList.toggle('on',x===b));calc();}));
+function resetFacts(){const sel=type==='soft'?'input.f,input.mn,input.mx':'input.f';for(const i of $('rows').querySelectorAll(sel)){i.value='';i.classList.remove('bad');}$('v0').value='';if(type==='alc')$('as').value='';calc();const first=$('rows').querySelector('input.f');if(first)first.focus();}
 document.addEventListener('focusout',e=>{const t=e.target;if(t.matches&&t.matches('input.mn,input.mx')){const v=num(t.value);if(isFinite(v))t.value=(Math.round(v*10)/10).toLocaleString('ru-RU',{maximumFractionDigits:1});}});
 ['input','change','keyup','paste','cut','focusout'].forEach(ev=>document.addEventListener(ev,()=>{calc();setTimeout(calc,0);}));
 let lastSig='';setInterval(()=>{const sig=[...document.querySelectorAll('input,select')].map(i=>i.value).join('|')+type;if(sig!==lastSig){lastSig=sig;calc();}},400);
