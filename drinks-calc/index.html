@@ -128,6 +128,10 @@ input[readonly]{background:#F4F0E2!important;border-color:transparent!important;
 .vbtns button{white-space:nowrap}
 @media (max-width:640px){.g .fld.tank{grid-column:1/-1}}
 .vbtns button.on{background:var(--purple);border-color:var(--purple);color:#fff}
+.tgt{display:flex;align-items:center;gap:8px;margin-top:6px}
+.tgt span{font-size:13px;font-weight:800;text-transform:uppercase;color:var(--muted)}
+.tgt input{width:90px}
+@media (max-width:640px){.tgt input{width:100%}#rows tr{align-items:start}}
 </style>
 </head>
 <body>
@@ -212,10 +216,10 @@ const DEF={
  alc:{v0:'',vt:'',rows:[
   ['A','Объёмная доля этилового спирта','%','','6,8','7,0'],
   ['E','Действительный экстракт','%','','6,7','7,2'],
-  ['K','Кислотность','см³','','6,1','6,6']]},
+  ['K','Кислотность','см³','','6,1','6,6','6,2']]},
  soft:{v0:'',vt:'',rows:[
   ['E','Массовая доля с/в','в свежеприготовленном сиропе, %','','',''],
-  ['K','Кислотность','см³','','','']]}
+  ['K','Кислотность','см³','','','','']]}
 };
 const store={alc:null,soft:null};
 let type='alc';
@@ -224,11 +228,11 @@ function build(){
   const d=store[type]||DEF[type];
   $('v0').value=d.v0;
   const lock=type==='alc';
-  $('rows').innerHTML=d.rows.map((r,i)=>{if(lock){r=r.slice();r[4]=DEF.alc.rows[i][4];r[5]=DEF.alc.rows[i][5];}
+  $('rows').innerHTML=d.rows.map((r,i)=>{if(lock){r=r.slice();r[4]=DEF.alc.rows[i][4];r[5]=DEF.alc.rows[i][5];r[6]=DEF.alc.rows[i][6];}
    const ro=lock?' readonly tabindex="-1" title="Стандарт задан и не меняется"':'';
    return `<tr data-k="${r[0]}"><td class="p">${r[1]}<small>${r[2]}</small></td>
    <td data-l="Фактически"><input class="f" inputmode="decimal" placeholder="факт" value="${r[3]}"></td>
-   <td class="st" data-l="Стандарт от – до"><div class="rng"><input class="mn" inputmode="decimal" placeholder="от" value="${r[4]}"${ro}> – <input class="mx" inputmode="decimal" placeholder="до" value="${r[5]}"${ro}></div></td><td class="now"></td></tr>`;}).join('');
+   <td class="st" data-l="Стандарт от – до"><div class="rng"><input class="mn" inputmode="decimal" placeholder="от" value="${r[4]}"${ro}> – <input class="mx" inputmode="decimal" placeholder="до" value="${r[5]}"${ro}></div>${r[0]==='K'?`<div class="tgt"><span>цель</span><input class="tt" inputmode="decimal" placeholder="авто" value="${r[6]||''}"${ro}></div>`:''}</td><td class="now"></td></tr>`;}).join('');
   $('stdNote').style.display=lock?'none':'';
   const soft=type==='soft';
   $('h1t').textContent=soft?'Показатели купажного сиропа':'Показатели напитка';
@@ -240,7 +244,7 @@ function build(){
   document.querySelectorAll('.softonly').forEach(e=>e.classList.toggle('hide',!soft));
 }
 function save(){
-  const rows=[...$('rows').rows].map((tr,i)=>{const b=(store[type]||DEF[type]).rows[i];return [b[0],b[1],b[2],tr.querySelector('.f').value,tr.querySelector('.mn').value,tr.querySelector('.mx').value];});
+  const rows=[...$('rows').rows].map((tr,i)=>{const b=(store[type]||DEF[type]).rows[i];const tt=tr.querySelector('.tt');return [b[0],b[1],b[2],tr.querySelector('.f').value,tr.querySelector('.mn').value,tr.querySelector('.mx').value,tt?tt.value:''];});
   const o={v0:$('v0').value,rows};
   store[type]=o;
 }
@@ -262,6 +266,9 @@ function calc(){
     o.name=tr.querySelector('.p').firstChild.textContent.trim();P[k]=o;
     o.hasF=isFinite(o.f)&&o.f>=0; o.hasS=isFinite(o.mn)&&isFinite(o.mx)&&o.mn>=0&&o.mn<=o.mx;
     o.on=o.hasF&&o.hasS; o.lo=o.mn; o.hi=o.mx;
+    const ttEl=tr.querySelector('.tt');o.tt=ttEl?num(ttEl.value):NaN;o.ttBad=false;o.ttAuto=false;
+    if(o.hasS){if(k==='K'){if(isFinite(o.tt)&&o.tt>=o.mn&&o.tt<=o.mx)o.T=o.tt;else{o.ttBad=isFinite(o.tt);o.ttAuto=true;o.T=o.mn+0.2*(o.mx-o.mn);}}else o.T=(o.mn+o.mx)/2;}
+    if(ttEl)ttEl.classList.toggle('bad',o.ttBad);
     tr.querySelector('.now').innerHTML=o.on?tag(inStd(o.f,o.mn,o.mx)):'';
   }
   const missF=keys.filter(k=>!P[k].hasF).map(k=>P[k].name.toLowerCase());
@@ -275,10 +282,11 @@ function calc(){
   const rowsOut=out=>keys.map(k=>{const o=P[k];
     const was=o.hasF?f(o.f,2):'<span style="color:var(--muted)">не введено</span>';
     const will=o.on&&out?`<b>${f(out[k],2)}</b>`:(out&&o.hasF&&out[k]!==undefined?`<b>${f(out[k],2)}</b>`:'—');
-    const goal=o.hasS?(soft?f(o.mn,1)+' – '+f(o.mx,1):o.mn.toLocaleString('ru-RU',{minimumFractionDigits:1})+' – '+o.mx.toLocaleString('ru-RU',{minimumFractionDigits:1}))+`<br><small style="color:var(--muted);font-weight:600">середина ${f((o.mn+o.mx)/2,2)}</small>`:'<span style="color:var(--muted)">не указан</span>';
+    const goal=o.hasS?(soft?f(o.mn,1)+' – '+f(o.mx,1):o.mn.toLocaleString('ru-RU',{minimumFractionDigits:1})+' – '+o.mx.toLocaleString('ru-RU',{minimumFractionDigits:1}))+`<br><small style="color:var(--muted);font-weight:600">${k==='K'?'цель '+f(o.T,2)+(o.ttAuto?' (авто)':''):'середина '+f(o.T,2)}</small>`:'<span style="color:var(--muted)">не указан</span>';
     const t=o.on&&out?tag(inStd(out[k],o.mn,o.mx)):'';
     return `<tr><td class="p">${o.name}</td><td data-l="Было">${was}</td><td data-l="Станет">${will}</td><td data-l="Цель">${goal}</td><td class="tg">${t}</td></tr>`;}).join('');
 
+  if(keys.some(k=>P[k].ttBad))warns.push('Целевая кислотность вне стандарта — взята автоматически (нижняя граница + 20 % диапазона).');
   if(badS.length)warns.push('Стандарт «от» больше, чем «до»: '+badS.join(', ')+'.');
   const skip=[...(missF.length<keys.length?missF.map(x=>x+' (нет факта)'):[]),...missS.map(x=>x+' (нет стандарта)')];
   if(skip.length&&act.length)warns.push('Не учитывается в расчёте: '+skip.join(', ')+'.');
@@ -300,7 +308,7 @@ function calc(){
   // Окно цели: t=1 — к середине стандарта, t=0 — к ближайшей границе стандарта
   // Если всё в норме — не корректируем. Иначе к середине: показатели вне нормы и кислотность. Остальные (в норме) остаются как есть, только не выходят за стандарт.
   const anyOut=act.some(k=>P[k].f<P[k].mn||P[k].f>P[k].mx);
-  const win=(o,t,k)=>{const toMid=anyOut&&(k==='K'||o.f<o.mn||o.f>o.mx);if(!toMid)return[o.mn,o.mx];const mid=(o.mn+o.mx)/2;return[o.mn+t*(mid-o.mn),o.mx-t*(o.mx-mid)];};
+  const win=(o,t,k)=>{const toMid=anyOut&&(k==='K'||o.f<o.mn||o.f>o.mx);if(!toMid)return[o.mn,o.mx];const T=o.T;return[o.mn+t*(T-o.mn),o.mx-t*(o.mx-T)];};
   const solve=t=>{
     const [aL,aH]=aA?win(P.A,t,'A'):[0,0], [eL,eH]=aE?win(P.E,t,'E'):[0,0], [kL,kH]=aK?win(P.K,t,'K'):[0,0];
     const Alo=aL/100,Ahi=aH/100,xlo=aE?xFromE(eL,Aref):0,xhi=aE?xFromE(eH,Aref):0,klo=kL*KF,khi=kH*KF;
@@ -349,7 +357,7 @@ function calc(){
   tb.innerHTML=rowsOut(out)+`<tr><td class="p">Объём, л</td><td data-l="Было">${f(V0,1)}</td><td data-l="Станет"><b>${f(V,2)}</b></td><td data-l="Итоговый">${soft?(isFinite(Vt)?'не больше '+f(Vt,0):''):'49 000'}</td><td class="tg">${soft&&isFinite(Vt)?tag(V<=Vt+1e-6):''}</td></tr>`;
 }
 document.querySelectorAll('#vtBtns button').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('#vtBtns button').forEach(x=>x.classList.toggle('on',x===b));calc();}));
-function resetFacts(){const sel=type==='soft'?'input.f,input.mn,input.mx':'input.f';for(const i of $('rows').querySelectorAll(sel)){i.value='';i.classList.remove('bad');}$('v0').value='';if(type==='alc')$('as').value='';calc();const first=$('rows').querySelector('input.f');if(first)first.focus();}
+function resetFacts(){const sel=type==='soft'?'input.f,input.mn,input.mx,input.tt':'input.f';for(const i of $('rows').querySelectorAll(sel)){i.value='';i.classList.remove('bad');}$('v0').value='';if(type==='alc')$('as').value='';calc();const first=$('rows').querySelector('input.f');if(first)first.focus();}
 document.addEventListener('focusout',e=>{const t=e.target;if(t.matches&&t.matches('input.mn,input.mx')){const v=num(t.value);if(isFinite(v))t.value=(Math.round(v*10)/10).toLocaleString('ru-RU',{maximumFractionDigits:1});}});
 ['input','change','keyup','paste','cut','focusout'].forEach(ev=>document.addEventListener(ev,()=>{calc();setTimeout(calc,0);}));
 let lastSig='';setInterval(()=>{const sig=[...document.querySelectorAll('input,select')].map(i=>i.value).join('|')+type;if(sig!==lastSig){lastSig=sig;calc();}},400);
