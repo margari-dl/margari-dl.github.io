@@ -297,7 +297,10 @@ function calc(){
     o.hasF=isFinite(o.f)&&o.f>=0; o.hasS=isFinite(o.mn)&&isFinite(o.mx)&&o.mn>=0&&o.mn<=o.mx;
     o.on=o.hasF&&o.hasS; o.lo=o.mn; o.hi=o.mx;
     const ttEl=tr.querySelector('.tt');o.tt=ttEl?num(ttEl.value):NaN;o.ttBad=false;o.ttAuto=false;
-    if(o.hasS){if(k==='K'){if(isFinite(o.tt)&&o.tt>=o.mn&&o.tt<=o.mx)o.T=o.tt;else{o.ttBad=isFinite(o.tt);o.ttAuto=true;o.T=o.mn+0.2*(o.mx-o.mn);}}else o.T=(o.mn+o.mx)/2;}
+    if(o.hasS){if(k==='K'){if(isFinite(o.tt)&&o.tt>=o.mn&&o.tt<=o.mx)o.T=o.tt;else{o.ttBad=isFinite(o.tt);o.ttAuto=true;o.T=o.mn+0.2*(o.mx-o.mn);}}
+      // алкогольные: экстракт вне нормы ведём к ближайшей границе стандарта, а не к середине
+      else if(!soft&&k==='E'&&o.hasF&&(o.f<o.mn||o.f>o.mx)){o.edge=o.f<o.mn?'нижняя граница':'верхняя граница';o.T=o.f<o.mn?o.mn:o.mx;}
+      else o.T=(o.mn+o.mx)/2;}
     if(ttEl)ttEl.classList.toggle('bad',o.ttBad);
     tr.querySelector('.now').innerHTML=o.on?tag(inStd(o.f,o.mn,o.mx)):'';
   }
@@ -312,8 +315,8 @@ function calc(){
   const rowsOut=out=>keys.map(k=>{const o=P[k];
     const was=o.hasF?f(o.f,2):'<span style="color:var(--muted)">не введено</span>';
     const will=o.on&&out?`<b>${f(out[k],2)}</b>`:(out&&o.hasF&&out[k]!==undefined?`<b>${f(out[k],2)}</b>`:'—');
-    const goal=o.hasS?(soft?f(o.mn,1)+' – '+f(o.mx,1):o.mn.toLocaleString('ru-RU',{minimumFractionDigits:1})+' – '+o.mx.toLocaleString('ru-RU',{minimumFractionDigits:1}))+`<br><small style="color:var(--muted);font-weight:600">${k==='K'?'цель '+f(o.T,2)+(o.ttAuto?' (авто)':''):'середина '+f(o.T,2)}</small>`:'<span style="color:var(--muted)">не указан</span>';
-    const t=o.on&&out?tag(inStd(out[k],o.mn,o.mx)):'';
+    const goal=o.hasS?(soft?f(o.mn,1)+' – '+f(o.mx,1):o.mn.toLocaleString('ru-RU',{minimumFractionDigits:1})+' – '+o.mx.toLocaleString('ru-RU',{minimumFractionDigits:1}))+`<br><small style="color:var(--muted);font-weight:600">${k==='K'?'цель '+f(o.T,2)+(o.ttAuto?' (авто)':''):o.edge?o.edge+' '+f(o.T,2):'середина '+f(o.T,2)}</small>`:'<span style="color:var(--muted)">не указан</span>';
+    const t=o.on&&out?tag(inStd(Math.round(out[k]*1000)/1000,o.mn,o.mx)):''; // округление: при цели на границе пересчёт плотности даёт сдвиг ~0,00001
     return `<tr><td class="p">${o.name}</td><td data-l="Было">${was}</td><td data-l="Станет">${will}</td><td data-l="Цель">${goal}</td><td class="tg">${t}</td></tr>`;}).join('');
 
   if(keys.some(k=>P[k].ttBad))warns.push('Целевая кислотность вне стандарта — взята автоматически (нижняя граница + 20 % диапазона).');
@@ -331,6 +334,7 @@ function calc(){
 
   // крепость для пересчёта экстракта (если не введена — по стандарту или 0)
   const Aref=soft?0:(P.A.hasF?P.A.f:(P.A.hasS?(P.A.mn+P.A.mx)/2:0));
+  let Atgt=Aref;
   const A0=aA?P.A.f/100:0, as=As/100;
   const Sy=xFromE(By,0);
   const x0=P.E.hasF?xFromE(P.E.f,Aref):0;
@@ -338,10 +342,10 @@ function calc(){
   // Окно цели: t=1 — к середине стандарта, t=0 — к ближайшей границе стандарта
   // Если всё в норме — не корректируем. Иначе к середине: показатели вне нормы и кислотность. Остальные (в норме) остаются как есть, только не выходят за стандарт.
   const anyOut=act.some(k=>P[k].f<P[k].mn||P[k].f>P[k].mx);
-  const win=(o,t,k)=>{const toMid=anyOut&&(k==='K'||o.f<o.mn||o.f>o.mx);if(!toMid)return[o.mn,o.mx];const T=o.T;return[o.mn+t*(T-o.mn),o.mx-t*(o.mx-T)];};
+  const win=(o,t,k)=>{const toMid=anyOut&&(k==='K'||o.f<o.mn||o.f>o.mx);if(!toMid)return[o.mn,o.mx];const T=o.T;if(o.edge)return[T,T];return[o.mn+t*(T-o.mn),o.mx-t*(o.mx-T)];};
   const solve=t=>{
     const [aL,aH]=aA?win(P.A,t,'A'):[0,0], [eL,eH]=aE?win(P.E,t,'E'):[0,0], [kL,kH]=aK?win(P.K,t,'K'):[0,0];
-    const Alo=aL/100,Ahi=aH/100,xlo=aE?xFromE(eL,Aref):0,xhi=aE?xFromE(eH,Aref):0,klo=kL*KF,khi=kH*KF;
+    const Alo=aL/100,Ahi=aH/100,xlo=aE?xFromE(eL,Atgt):0,xhi=aE?xFromE(eH,Atgt):0,klo=kL*KF,khi=kH*KF;
     if(aE&&xlo>=Sy)return{err:'Стандарт по экстракту выше, чем в сиропе.'};
     if((aE&&xhi<=0&&x0>0)||(aK&&khi<=0&&k0>0)||(aA&&Ahi<=0&&A0>0))return{err:'Верхняя граница стандарта должна быть больше 0.'};
     if(1-(aA?Alo/as:0)-(aE?xlo/Sy:0)<=0)return{err:'Такой стандарт недостижим этими добавками.'};
@@ -356,6 +360,8 @@ function calc(){
   };
   let t=1,S=solve(1);
   if(S.err)return fail(S.err);
+  // алкогольные: экстракт в цели пересчитываем при итоговой крепости, а не при исходной (важно, когда цель — граница стандарта)
+  if(aA&&aE)for(let i=0;i<5;i++){const V=S.Vmin,q=S.need(V);Atgt=(V0*A0+q.s*as)/V*100;S=solve(1);if(S.err)return fail(S.err);}
   if(isFinite(Vt)&&S.Vmin>Vt+1e-6){
     const S0=solve(0);
     if(S0.err)return fail(S0.err);
