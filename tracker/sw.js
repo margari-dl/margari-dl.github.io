@@ -1,6 +1,6 @@
 // Работа без интернета: все файлы трекера хранятся на устройстве.
 // При каждом обновлении сайта меняйте номер версии, чтобы устройства получили новую версию.
-const CACHE = 'tracker-v3';
+const CACHE = 'tracker-v4';
 const FILES = [
   './',
   './index.html',
@@ -10,8 +10,7 @@ const FILES = [
   './icons/maskable-512.png',
   './icons/apple-touch-icon.png',
   './icons/favicon.png',
-  './img/bg.jpg',
-  './img/leaf.jpg'
+  './img/bg.jpg'
 ];
 
 self.addEventListener('install', e => {
