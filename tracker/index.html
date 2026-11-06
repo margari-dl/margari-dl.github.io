@@ -142,7 +142,7 @@ input{font-weight:500}
 svg text{fill:var(--ink);opacity:.8;font-weight:500}
 #mNote,#mCount,#wHint{color:var(--ink);font-weight:500}
 /* блоки без стекла: лёгкая прозрачная подложка, фото видно чётко */
-.hero,.card,.tile{background:rgba(255,255,255,.16);-webkit-backdrop-filter:none;backdrop-filter:none;border:1px solid rgba(255,255,255,.55);box-shadow:0 8px 24px rgba(40,10,25,.14)}
+.hero,.card,.tile{background:rgba(255,255,255,.58);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.55);box-shadow:0 8px 24px rgba(40,10,25,.14)}
 .hero::before,.card::before,.tile::before{display:none}
 .status:empty{display:none}
 h1,h2,.tile .k,label,th,.legend,summary,.goal-edit{color:var(--ink);font-weight:500;text-shadow:0 0 2px #fff, 0 0 6px #fff, 0 0 12px rgba(255,255,255,.85)}
@@ -162,6 +162,10 @@ h1{font-weight:400}
 #wHint:not(:empty),#mNote,#mCount,summary .note{color:var(--ink);font-weight:500;background:rgba(255,255,255,.7);border-radius:99px;padding:2px 10px}
 .datechip{background:var(--gloss), rgba(255,255,255,.8)}
 #chart{background:rgba(255,255,255,.6);border-radius:16px}
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 16px);transform:translateX(-50%);z-index:10;display:flex;align-items:center;gap:12px;
+  padding:8px 8px 8px 16px;border-radius:99px;background:rgba(22,48,31,.92);color:#fff;font-size:15px;box-shadow:0 10px 26px rgba(0,0,0,.25);white-space:nowrap}
+.toast[hidden]{display:none}
+.toast button{min-height:38px;padding:6px 14px;background:#fff;color:var(--accent);font-size:15px}
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.hero,.card,.tile{background:rgba(255,255,255,.85)}}
 @media (max-width:760px){.tiles{grid-template-columns:1fr 1fr}.cols{grid-template-columns:1fr}}
 @media (max-width:360px){.tile .v{font-size:22px}#wKg{font-size:32px}h1{font-size:30px}}
@@ -178,7 +182,7 @@ h1{font-weight:400}
 
   <div class="cols">
     <section class="card" aria-labelledby="hW">
-      <div class="head"><h2 id="hW">Вес</h2><span class="d" id="wHint"></span></div>
+      <h2 id="hW">Вес</h2>
       <form id="fW" class="wform" novalidate>
         <label class="datechip" for="wDate">
           <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="12" rx="3" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M1.5 6.5h13M5 1v3M11 1v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
@@ -207,7 +211,7 @@ h1{font-weight:400}
   <div class="cols">
     <section class="card" aria-labelledby="hR">
       <h2 id="hR">Записи веса</h2>
-      <div class="tablebox"><table id="wTable"><thead><tr><th>Дата</th><th class="num">Вес</th><th class="num">Среднее</th><th></th></tr></thead><tbody id="wRows"></tbody></table></div>
+      <div class="tablebox"><table id="wTable"><thead><tr><th>Дата</th><th class="num">Вес</th><th></th></tr></thead><tbody id="wRows"></tbody></table></div>
       <div class="empty" id="wEmpty">Пока нет записей. Начните с сегодняшнего веса.</div>
       <button class="ghost" type="button" id="wAll" hidden>Показать все</button>
     </section>
@@ -222,7 +226,6 @@ h1{font-weight:400}
         <button type="submit" id="mBtn" class="full">Записать замеры</button>
         <div class="msg full" id="mMsg"></div>
       </form>
-      <p class="tip">Утром, сантиметром по голому телу: талия по самому узкому месту, бёдра по самому широкому.</p>
       <details class="hist">
         <summary><span>История замеров</span><span class="note" id="mCount"></span></summary>
         <div class="tablebox"><table><thead><tr><th>Дата</th><th class="num">Талия</th><th class="num">Бёдра</th><th class="num">Грудь</th><th></th></tr></thead><tbody id="mRows"></tbody></table></div>
@@ -233,10 +236,9 @@ h1{font-weight:400}
 
   <details class="card">
     <summary><h2>Копия записей</h2><span class="note">раз в неделю</span></summary>
-    <p class="tip">Записи живут только в этом телефоне. Раз в неделю нажимайте «Скопировать» и сохраняйте текст в Заметки или отправляйте Зосе для разбора. На новом телефоне вставьте копию в поле и нажмите «Восстановить».</p>
-    <div class="btnrow"><button class="ghost" id="copy" type="button">Скопировать записи</button><button class="ghost" id="restore" type="button">Восстановить из копии</button></div>
+    <p class="tip">Записи живут только в этом телефоне. Раз в неделю копируйте их и сохраняйте в Заметки или отправляйте Зосе для разбора.</p>
+    <button class="ghost" id="copy" type="button">Скопировать записи</button>
     <div class="msg" id="copyMsg"></div>
-    <label for="backup">Поле для копии<textarea id="backup" rows="3"></textarea></label>
   </details>
 
   <section class="card" aria-labelledby="hC">
@@ -248,6 +250,8 @@ h1{font-weight:400}
     <div class="legend"><span><i style="background:var(--avg)"></i>среднее за 7 дней</span><span><i style="background:var(--dot);height:8px;width:8px;border-radius:50%"></i>вес по дням</span><span><i style="background:var(--goal)"></i>цель</span></div>
   </section>
 </div>
+
+<div class="toast" id="toast" role="status" hidden><span id="toastTxt"></span><button type="button" id="undo">Вернуть</button></div>
 
 <script>
 (function(){
@@ -335,8 +339,8 @@ h1{font-weight:400}
     weights.slice().reverse().forEach((e, i) => {
       const tr = document.createElement("tr");
       if (i >= 10) tr.className = "more";
-      tr.innerHTML = "<td>" + ruDate(e.date) + "</td><td class='num'>" + fmt(e.kg) + "</td><td class='num'>" + fmt(avg7(e.day)) + "</td><td class='num'></td>";
-      tr.lastChild.appendChild(delBtn(() => delete store.weights[e.date]));
+      tr.innerHTML = "<td>" + ruDate(e.date) + "</td><td class='num'>" + fmt(e.kg) + " кг</td><td class='num'></td>";
+      tr.lastChild.appendChild(delBtn("weights", e.date, "Вес"));
       wb.appendChild(tr);
     });
     $("wEmpty").style.display = weights.length ? "none" : "block";
@@ -350,23 +354,28 @@ h1{font-weight:400}
       const i = measures.length - 1 - ri;
       const tr = document.createElement("tr");
       tr.innerHTML = "<td>" + ruDate(e.date) + "</td>" + cell(e.waist, "waist", i) + cell(e.hips, "hips", i) + cell(e.chest, "chest", i) + "<td class='num'></td>";
-      tr.lastChild.appendChild(delBtn(() => delete store.measures[e.date]));
+      tr.lastChild.appendChild(delBtn("measures", e.date, "Замеры"));
       mb.appendChild(tr);
     });
     $("mEmpty").style.display = measures.length ? "none" : "block";
-    $("mCount").textContent = measures.length ? measures.length + " шт." : "пусто";
+    const ml = measures[measures.length-1];
+    $("mCount").textContent = ml ? [["талия", ml.waist], ["бёдра", ml.hips], ["грудь", ml.chest]].filter(p => p[1] != null).map(p => p[0] + " " + fmt(p[1])).join(" · ") : "пусто";
     $("mNote").textContent = measures.length ? "последние " + ruDate(measures[measures.length-1].date) : "раз в 2–4 недели";
 
     drawChart();
   }
 
-  function delBtn(remove){
+  let undoTimer;
+  function delBtn(kind, date, label){
     const b = document.createElement("button");
     b.type = "button"; b.className = "del"; b.textContent = "Удалить";
-    let armed = false, t;
     b.addEventListener("click", () => {
-      if (!armed){ armed = true; b.classList.add("armed"); b.textContent = "Точно?"; t = setTimeout(() => { armed = false; b.classList.remove("armed"); b.textContent = "Удалить"; }, 3000); return; }
-      clearTimeout(t); remove(); save(); render();
+      const was = store[kind][date];
+      delete store[kind][date]; save(); render();
+      const t = $("toast"); $("toastTxt").textContent = label + " за " + ruDate(date) + " удалены";
+      t.hidden = false; clearTimeout(undoTimer);
+      $("undo").onclick = () => { store[kind][date] = was; save(); render(); t.hidden = true; clearTimeout(undoTimer); };
+      undoTimer = setTimeout(() => { t.hidden = true; }, 5000);
     });
     return b;
   }
@@ -419,7 +428,6 @@ h1{font-weight:400}
   function lastKg(){ return weights.length ? weights[weights.length-1].kg : null; }
   function updateHint(){
     const d = $("wDate").value, had = store.weights[d];
-    $("wHint").textContent = typeof had === "number" ? "на " + ruDate(d) + " уже " + fmt(had) + " кг, заменится" : "";
     if (isDate(d)){
       const diff = dayNum(today) - dayNum(d), long = parseIso(d).toLocaleDateString("ru-RU", {day:"numeric", month:"long"});
       $("wDateTxt").textContent = diff === 0 ? "Сегодня, " + long : diff === 1 ? "Вчера, " + long : long;
@@ -461,19 +469,9 @@ h1{font-weight:400}
   $("copy").addEventListener("click", async () => {
     const text = "Трекер веса, копия от " + ruDate(today) + "\n" + JSON.stringify(store);
     try { await navigator.clipboard.writeText(text); msg("copyMsg", "Скопировано. Вставьте в Заметки или отправьте Зосе."); }
-    catch(e){ $("backup").value = text; $("copyMsg").textContent = "Скопируйте текст из поля ниже вручную"; }
+    catch(e){ msg("copyMsg", "Не получилось скопировать. Попробуйте ещё раз.", true); }
   });
 
-  $("restore").addEventListener("click", () => {
-    const raw = $("backup").value, i = raw.indexOf("{");
-    let data = null;
-    try { data = JSON.parse(raw.slice(i)); } catch(e){}
-    if (!data || typeof data.weights !== "object" || typeof data.measures !== "object"){ $("copyMsg").textContent = "Не похоже на копию трекера. Вставьте текст целиком."; return; }
-    Object.assign(store.weights, data.weights); Object.assign(store.measures, data.measures);
-    if (typeof data.goal === "number"){ store.goal = goal = data.goal; $("goal").value = goal; }
-    if (save()){ $("backup").value = ""; $("copyMsg").textContent = "Записи из копии добавлены"; }
-    render();
-  });
 
   if (!canSave) setStatus("Браузер не даёт сохранять записи. Откройте трекер не в режиме инкогнито.", true);
   try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch(e){}
