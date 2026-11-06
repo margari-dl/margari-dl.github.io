@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Трекер веса</title>
+<meta name="theme-color" content="#2f6f5e">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icons/favicon.png?v=1">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Onest:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Сводка сверху, ввод сразу под ней, график и история ниже; одна колонка на телефоне, две на широком экране */
+:root{
+  --bg:#f3f5f2; --surface:#ffffff; --ink:#1d2a26; --muted:#64716c; --line:#dde3df;
+  --accent:#2f6f5e; --accent-soft:#dcebe5; --avg:#2f6f5e; --dot:#9fb7ae; --goal:#c2703d;
+  --good:#2f7d4f; --good-bg:#e1f1e6; --warn:#a86a10; --warn-bg:#fbefd9; --bad:#b33a3a; --bad-bg:#f8e1e0;
+  --display:"Unbounded", "Arial Black", sans-serif; --body:"Onest", "Segoe UI", Arial, sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#141a18; --surface:#1d2522; --ink:#e6ece9; --muted:#9aa8a2; --line:#2f3a36;
+    --accent:#6cc2a6; --accent-soft:#23392f; --avg:#6cc2a6; --dot:#4f6a60; --goal:#e39a68;
+    --good:#7fd29b; --good-bg:#1f3527; --warn:#f0bd62; --warn-bg:#3a2e17; --bad:#f08c8c; --bad-bg:#3d2222;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#141a18; --surface:#1d2522; --ink:#e6ece9; --muted:#9aa8a2; --line:#2f3a36;
+  --accent:#6cc2a6; --accent-soft:#23392f; --avg:#6cc2a6; --dot:#4f6a60; --goal:#e39a68;
+  --good:#7fd29b; --good-bg:#1f3527; --warn:#f0bd62; --warn-bg:#3a2e17; --bad:#f08c8c; --bad-bg:#3d2222;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);padding:20px 16px 48px}
+.wrap{max-width:980px;margin:0 auto;display:grid;gap:16px}
+header{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px}
+h1{font:700 26px/1.15 var(--display);margin:0;text-wrap:balance}
+h2{font:500 15px/1.3 var(--display);margin:0 0 12px;text-wrap:balance}
+.sub{color:var(--muted);font-size:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;display:grid;gap:4px;align-content:start}
+.tile .k{color:var(--muted);font-size:13px}
+.tile .v{font:700 26px/1.1 var(--display);font-variant-numeric:tabular-nums}
+.tile .n{font-size:13px;color:var(--muted)}
+.pill{display:inline-block;padding:2px 10px;border-radius:99px;font-size:13px;font-weight:600;justify-self:start}
+.pill.good{background:var(--good-bg);color:var(--good)}
+.pill.warn{background:var(--warn-bg);color:var(--warn)}
+.pill.bad{background:var(--bad-bg);color:var(--bad)}
+.pill.none{background:var(--accent-soft);color:var(--muted)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+form{display:flex;flex-wrap:wrap;gap:10px;align-items:end}
+label{display:grid;gap:4px;font-size:13px;color:var(--muted)}
+input{font:16px var(--body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:9px 10px;width:130px;font-variant-numeric:tabular-nums}
+input[type=date]{width:150px}
+input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button{font:600 15px var(--body);border:0;border-radius:10px;padding:10px 16px;cursor:pointer;background:var(--accent);color:var(--surface)}
+button.ghost{background:transparent;color:var(--muted);border:1px solid var(--line);padding:6px 10px;font-size:13px}
+button.del{background:transparent;color:var(--muted);padding:4px 8px;font-size:13px;font-weight:500}
+button.del.armed{color:var(--bad);font-weight:600}
+button:disabled{opacity:.5;cursor:default}
+.msg{font-size:13px;color:var(--muted);min-height:1.2em;width:100%}
+.msg.err{color:var(--bad)}
+.chartbox{overflow-x:auto}
+svg text{fill:var(--muted);font:12px var(--body)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted);margin-top:6px}
+.legend i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:6px}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:15px}
+th{text-align:left;font-weight:500;color:var(--muted);font-size:13px;padding:6px 4px;border-bottom:1px solid var(--line)}
+td{padding:7px 4px;border-bottom:1px solid var(--line)}
+td.num,th.num{text-align:right}
+.tablebox{overflow-x:auto;max-height:420px;overflow-y:auto}
+.empty{color:var(--muted);font-size:14px;padding:8px 0}
+.status{font-size:13px;color:var(--muted)}
+.status.err{color:var(--bad)}
+.goal-edit{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted)}
+.goal-edit input{width:80px;padding:5px 8px;font-size:14px}
+.tip{font-size:13px;color:var(--muted);margin:10px 0 0}
+@media (max-width:760px){.tiles{grid-template-columns:1fr 1fr}.grid2{grid-template-columns:1fr}}
+@media (max-width:400px){.tile .v{font-size:22px}input{width:120px}}
+@media (prefers-reduced-motion:no-preference){button{transition:opacity .15s}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Трекер веса</h1>
+      <div class="sub">Вес по утрам и замеры раз в 2–4 недели</div>
+    </div>
+    <div class="status" id="status">Записи хранятся только в этом телефоне</div>
+  </header>
+
+  <section class="tiles" aria-label="Сводка">
+    <div class="tile"><span class="k">Среднее за 7 дней</span><span class="v" id="tAvg">—</span><span class="n" id="tAvgN">нет записей</span></div>
+    <div class="tile"><span class="k">Темп за неделю</span><span class="v" id="tPace">—</span><span class="pill none" id="tPaceP">нужно 8+ дней</span></div>
+    <div class="tile"><span class="k">Сброшено с начала</span><span class="v" id="tLost">—</span><span class="n" id="tLostN">—</span></div>
+    <div class="tile"><span class="k">До цели</span><span class="v" id="tLeft">—</span><span class="n" id="tLeftN">—</span></div>
+  </section>
+
+  <div class="grid2">
+    <section class="card">
+      <h2>Вес сегодня</h2>
+      <form id="fW">
+        <label for="wDate">Дата<input type="date" id="wDate" required></label>
+        <label for="wKg">Вес, кг<input type="text" id="wKg" inputmode="decimal" step="0.1" min="30" max="200" placeholder="67,4" required></label>
+        <button type="submit" id="wBtn">Записать</button>
+        <div class="msg" id="wMsg"></div>
+      </form>
+      <p class="tip">Утром, после туалета, до еды и воды. Если запись на эту дату уже есть, она заменится.</p>
+    </section>
+    <section class="card">
+      <h2>Замеры, см</h2>
+      <form id="fM">
+        <label for="mDate">Дата<input type="date" id="mDate" required></label>
+        <label for="mWaist">Талия<input type="text" id="mWaist" inputmode="decimal" step="0.5" min="30" max="200"></label>
+        <label for="mHips">Бёдра<input type="text" id="mHips" inputmode="decimal" step="0.5" min="30" max="200"></label>
+        <label for="mChest">Грудь<input type="text" id="mChest" inputmode="decimal" step="0.5" min="30" max="200"></label>
+        <button type="submit" id="mBtn">Записать</button>
+        <div class="msg" id="mMsg"></div>
+      </form>
+      <p class="tip">Сантиметр по голому телу, утром: талия по самому узкому месту, бёдра по самому широкому.</p>
+    </section>
+  </div>
+
+  <section class="card">
+    <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;align-items:baseline">
+      <h2>Динамика</h2>
+      <div class="goal-edit"><label for="goal" style="display:flex;gap:6px;align-items:center;color:var(--muted)">Цель, кг <input type="text" inputmode="decimal" id="goal" step="0.5" min="30" max="200" value="58"></label></div>
+    </div>
+    <div class="chartbox"><svg id="chart" width="100%" height="280" role="img" aria-label="График веса"></svg></div>
+    <div class="legend"><span><i style="background:var(--avg)"></i>среднее за 7 дней</span><span><i style="background:var(--dot);height:8px;width:8px;border-radius:50%"></i>вес по дням</span><span><i style="background:var(--goal)"></i>цель</span></div>
+  </section>
+
+  <div class="grid2">
+    <section class="card">
+      <h2>Записи веса</h2>
+      <div class="tablebox"><table><thead><tr><th>Дата</th><th class="num">Вес</th><th class="num">Среднее 7 дн.</th><th></th></tr></thead><tbody id="wRows"></tbody></table></div>
+      <div class="empty" id="wEmpty">Пока нет записей. Начните с сегодняшнего веса.</div>
+    </section>
+    <section class="card">
+      <h2>Записи замеров</h2>
+      <div class="tablebox"><table><thead><tr><th>Дата</th><th class="num">Талия</th><th class="num">Бёдра</th><th class="num">Грудь</th><th></th></tr></thead><tbody id="mRows"></tbody></table></div>
+      <div class="empty" id="mEmpty">Пока нет замеров.</div>
+    </section>
+  </div>
+
+  <section class="card">
+    <h2>Копия записей</h2>
+    <p class="tip" style="margin:0 0 10px">Записи живут только в этом телефоне. Раз в неделю нажимайте «Скопировать» и сохраняйте текст в заметки или отправляйте Зосе для разбора. Чтобы вернуть записи на новом телефоне, вставьте копию в поле и нажмите «Восстановить».</p>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"><button class="ghost" id="copy" type="button">Скопировать записи</button><button class="ghost" id="restore" type="button">Восстановить из копии</button><span class="status" id="copyMsg"></span></div>
+    <label for="backup" style="margin-top:10px">Поле для копии<textarea id="backup" rows="3" style="width:100%;font:13px var(--body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px"></textarea></label>
+  </section>
+</div>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const fmt = (x, d=1) => x == null || isNaN(x) ? "—" : x.toFixed(d).replace(".", ",");
+  const sign = x => (x > 0 ? "+" : x < 0 ? "−" : "") + fmt(Math.abs(x));
+  const pad = n => String(n).padStart(2, "0");
+  const iso = d => d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate());
+  const parseIso = s => { const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d); };
+  const DAY = 86400000;
+  const dayNum = s => Math.round(parseIso(s).getTime() / DAY);
+  const ruDate = s => { const d = parseIso(s); return pad(d.getDate()) + "." + pad(d.getMonth()+1) + "." + String(d.getFullYear()).slice(2); };
+  const num = v => { if (v === "" || v == null) return null; const x = parseFloat(String(v).replace(",", ".")); return isNaN(x) ? null : Math.round(x*10)/10; };
+  const isDate = s => typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s);
+
+  // Записи хранятся только в этом браузере: {weights:{дата:кг}, measures:{дата:{waist,hips,chest}}, goal}
+  const KEY = "weight-tracker-v1";
+  let store = {weights:{}, measures:{}, goal:58}, canSave = true;
+  try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && typeof s === "object") store = Object.assign(store, s); }
+  catch(e){ canSave = false; }
+  function save(){
+    try { localStorage.setItem(KEY, JSON.stringify(store)); return true; }
+    catch(e){ setStatus("Браузер не даёт сохранять записи. Откройте трекер не в режиме инкогнито.", true); return false; }
+  }
+
+  let weights = [], measures = [], goal = store.goal;
+  const today = iso(new Date());
+  $("wDate").value = today; $("mDate").value = today; $("goal").value = goal;
+
+  function load(){
+    weights = Object.keys(store.weights).filter(isDate).map(d => ({date:d, kg:store.weights[d]})).filter(e => typeof e.kg === "number");
+    measures = Object.keys(store.measures).filter(isDate).map(d => Object.assign({date:d, waist:null, hips:null, chest:null}, store.measures[d]));
+  }
+
+  function avg7(endDay){
+    const w = weights.filter(e => e.day <= endDay && e.day > endDay - 7);
+    return w.length ? w.reduce((a,e) => a + e.kg, 0) / w.length : null;
+  }
+
+  function render(){
+    load();
+    weights.forEach(e => e.day = dayNum(e.date));
+    weights.sort((a,b) => a.day - b.day);
+    measures.sort((a,b) => a.date < b.date ? -1 : 1);
+
+    const last = weights[weights.length-1], first = weights[0];
+    const cur = last ? avg7(last.day) : null;
+    $("tAvg").textContent = cur == null ? "—" : fmt(cur) + " кг";
+    $("tAvgN").textContent = last ? "последний вес " + fmt(last.kg) + " кг, " + ruDate(last.date) : "нет записей";
+
+    const p = $("tPaceP"); let pace = null;
+    if (last && first && last.day - first.day >= 7){
+      const prev = avg7(last.day - 7);
+      if (prev != null) pace = cur - prev;
+    }
+    if (pace == null){
+      $("tPace").textContent = "—"; p.className = "pill none"; p.textContent = "нужно 8+ дней";
+    } else {
+      $("tPace").textContent = sign(pace) + " кг";
+      const limit = cur * 0.01;
+      if (pace > 0.05){ p.className = "pill warn"; p.textContent = "вес растёт"; }
+      else if (-pace > limit){ p.className = "pill bad"; p.textContent = "быстрее " + fmt(limit) + " кг: добавьте еды"; }
+      else if (-pace >= 0.15){ p.className = "pill good"; p.textContent = "безопасный темп"; }
+      else { p.className = "pill none"; p.textContent = "почти на месте"; }
+    }
+
+    if (first && cur != null){
+      const startAvg = avg7(first.day);
+      const lost = startAvg - cur;
+      $("tLost").textContent = sign(-lost) + " кг";
+      $("tLostN").textContent = "с " + ruDate(first.date) + ", было " + fmt(startAvg) + " кг";
+      const left = cur - goal;
+      $("tLeft").textContent = left <= 0 ? "цель!" : fmt(left) + " кг";
+      if (left <= 0) $("tLeftN").textContent = "цель " + fmt(goal) + " кг достигнута";
+      else if (pace != null && pace < -0.1){
+        const weeks = left / -pace;
+        const d = new Date(Date.now() + weeks * 7 * DAY);
+        $("tLeftN").textContent = "при этом темпе ≈ " + d.toLocaleDateString("ru-RU", {month:"long", year:"numeric"});
+      } else $("tLeftN").textContent = "цель " + fmt(goal) + " кг";
+    } else {
+      $("tLost").textContent = "—"; $("tLostN").textContent = "—"; $("tLeft").textContent = "—"; $("tLeftN").textContent = "цель " + fmt(goal) + " кг";
+    }
+
+    const wb = $("wRows"); wb.innerHTML = "";
+    weights.slice().reverse().forEach(e => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = "<td>" + ruDate(e.date) + "</td><td class='num'>" + fmt(e.kg) + "</td><td class='num'>" + fmt(avg7(e.day)) + "</td><td class='num'></td>";
+      tr.lastChild.appendChild(delBtn(() => delete store.weights[e.date]));
+      wb.appendChild(tr);
+    });
+    $("wEmpty").style.display = weights.length ? "none" : "block";
+
+    const mb = $("mRows"); mb.innerHTML = "";
+    const m0 = measures[0];
+    const cell = (v, k, i) => { if (v == null) return "<td class='num'>—</td>"; const d = i > 0 && m0[k] != null ? " <span class='status'>(" + sign(v - m0[k]) + ")</span>" : ""; return "<td class='num'>" + fmt(v) + d + "</td>"; };
+    measures.slice().reverse().forEach((e, ri) => {
+      const i = measures.length - 1 - ri;
+      const tr = document.createElement("tr");
+      tr.innerHTML = "<td>" + ruDate(e.date) + "</td>" + cell(e.waist, "waist", i) + cell(e.hips, "hips", i) + cell(e.chest, "chest", i) + "<td class='num'></td>";
+      tr.lastChild.appendChild(delBtn(() => delete store.measures[e.date]));
+      mb.appendChild(tr);
+    });
+    $("mEmpty").style.display = measures.length ? "none" : "block";
+
+    drawChart();
+  }
+
+  function delBtn(remove){
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "del"; b.textContent = "Удалить";
+    let armed = false, t;
+    b.addEventListener("click", () => {
+      if (!armed){ armed = true; b.classList.add("armed"); b.textContent = "Точно?"; t = setTimeout(() => { armed = false; b.classList.remove("armed"); b.textContent = "Удалить"; }, 3000); return; }
+      clearTimeout(t); remove(); save(); render();
+    });
+    return b;
+  }
+
+  function drawChart(){
+    const svg = $("chart"), W = Math.max(svg.clientWidth || 600, 320), H = 280;
+    svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+    const L = 44, R = 12, T = 12, B = 28;
+    if (!weights.length){
+      svg.innerHTML = "<text x='" + W/2 + "' y='" + H/2 + "' text-anchor='middle'>Здесь появится график после первых записей</text>";
+      return;
+    }
+    const d0 = weights[0].day, d1 = Math.max(weights[weights.length-1].day, d0 + 6);
+    const vals = weights.map(e => e.kg).concat([goal]);
+    let lo = Math.floor(Math.min(...vals) - 0.5), hi = Math.ceil(Math.max(...vals) + 0.5);
+    if (hi - lo < 4) hi = lo + 4;
+    const x = d => L + (d - d0) / (d1 - d0) * (W - L - R);
+    const y = v => T + (hi - v) / (hi - lo) * (H - T - B);
+    let s = "";
+    const step = hi - lo > 12 ? 2 : 1;
+    for (let v = lo; v <= hi; v += step){
+      s += "<line x1='" + L + "' x2='" + (W-R) + "' y1='" + y(v) + "' y2='" + y(v) + "' stroke='var(--line)'/>";
+      s += "<text x='" + (L-8) + "' y='" + (y(v)+4) + "' text-anchor='end'>" + v + "</text>";
+    }
+    const span = d1 - d0, tickEvery = span > 120 ? 30 : span > 40 ? 14 : 7;
+    for (let d = d0; d <= d1; d += tickEvery){
+      const dt = new Date(d * DAY);
+      s += "<text x='" + x(d) + "' y='" + (H-8) + "' text-anchor='middle'>" + pad(dt.getDate()) + "." + pad(dt.getMonth()+1) + "</text>";
+    }
+    s += "<line x1='" + L + "' x2='" + (W-R) + "' y1='" + y(goal) + "' y2='" + y(goal) + "' stroke='var(--goal)' stroke-width='2' stroke-dasharray='6 5'/>";
+    s += "<text x='" + (W-R) + "' y='" + (y(goal)-6) + "' text-anchor='end' style='fill:var(--goal)'>цель " + fmt(goal) + "</text>";
+    weights.forEach(e => { s += "<circle cx='" + x(e.day) + "' cy='" + y(e.kg) + "' r='3.5' fill='var(--dot)'/>"; });
+    const pts = weights.map(e => [x(e.day), y(avg7(e.day))]);
+    if (pts.length > 1){
+      const line = pts.map((p,i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ");
+      const area = line + " L" + pts[pts.length-1][0].toFixed(1) + " " + (H-B) + " L" + pts[0][0].toFixed(1) + " " + (H-B) + " Z";
+      s += "<path d='" + area + "' fill='var(--accent-soft)' opacity='.6'/>";
+      s += "<path d='" + line + "' fill='none' stroke='var(--avg)' stroke-width='3' stroke-linejoin='round' stroke-linecap='round'/>";
+    }
+    const lp = pts[pts.length-1];
+    s += "<circle cx='" + lp[0] + "' cy='" + lp[1] + "' r='5.5' fill='var(--avg)' stroke='var(--surface)' stroke-width='2'/>";
+    svg.innerHTML = s;
+  }
+  window.addEventListener("resize", () => drawChart());
+
+  function setStatus(t, err){ const s = $("status"); s.textContent = t; s.className = "status" + (err ? " err" : ""); }
+  function msg(id, t, err){ const m = $(id); m.textContent = t; m.className = "msg" + (err ? " err" : ""); }
+
+  $("fW").addEventListener("submit", ev => {
+    ev.preventDefault();
+    const date = $("wDate").value, kg = num($("wKg").value);
+    if (!isDate(date) || kg == null || kg < 30 || kg > 200){ msg("wMsg", "Введите вес от 30 до 200 кг", true); return; }
+    store.weights[date] = kg;
+    if (save()){ $("wKg").value = ""; msg("wMsg", "Записано: " + fmt(kg) + " кг на " + ruDate(date)); }
+    render();
+  });
+
+  $("fM").addEventListener("submit", ev => {
+    ev.preventDefault();
+    const date = $("mDate").value, waist = num($("mWaist").value), hips = num($("mHips").value), chest = num($("mChest").value);
+    if (!isDate(date) || (waist == null && hips == null && chest == null)){ msg("mMsg", "Заполните хотя бы один замер", true); return; }
+    store.measures[date] = {waist, hips, chest};
+    if (save()){ ["mWaist","mHips","mChest"].forEach(id => $(id).value = ""); msg("mMsg", "Замеры на " + ruDate(date) + " записаны"); }
+    render();
+  });
+
+  $("goal").addEventListener("input", () => {
+    const g = num($("goal").value); if (g == null || g < 30 || g > 200) return;
+    goal = store.goal = g; save(); render();
+  });
+
+  $("copy").addEventListener("click", async () => {
+    const text = "Трекер веса, копия от " + ruDate(today) + "\n" + JSON.stringify(store);
+    try { await navigator.clipboard.writeText(text); $("copyMsg").textContent = "Скопировано. Сохраните в заметки или отправьте Зосе."; }
+    catch(e){ $("backup").value = text; $("copyMsg").textContent = "Скопируйте текст из поля ниже вручную"; }
+  });
+
+  $("restore").addEventListener("click", () => {
+    const raw = $("backup").value, i = raw.indexOf("{");
+    let data = null;
+    try { data = JSON.parse(raw.slice(i)); } catch(e){}
+    if (!data || typeof data.weights !== "object" || typeof data.measures !== "object"){ $("copyMsg").textContent = "Не похоже на копию трекера. Вставьте текст целиком."; return; }
+    Object.assign(store.weights, data.weights); Object.assign(store.measures, data.measures);
+    if (typeof data.goal === "number"){ store.goal = goal = data.goal; $("goal").value = goal; }
+    if (save()){ $("backup").value = ""; $("copyMsg").textContent = "Записи из копии добавлены"; }
+    render();
+  });
+
+  if (!canSave) setStatus("Браузер не даёт сохранять записи. Откройте трекер не в режиме инкогнито.", true);
+  else setStatus("Записи хранятся только в этом телефоне");
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch(e){}
+  render();
+
+  if ("serviceWorker" in navigator){ window.addEventListener("load", () => { try { navigator.serviceWorker.register("sw.js").catch(() => {}); } catch(e){} }); }
+})();
+</script>
+</body>
+</html>
