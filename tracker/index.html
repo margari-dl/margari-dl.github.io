@@ -2,9 +2,15 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Трекер веса</title>
-<meta name="theme-color" content="#2f6f5e">
+<meta name="theme-color" content="#f3f5f2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#141a18" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Вес">
+<meta name="format-detection" content="telephone=no">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" href="icons/favicon.png?v=1">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=1">
@@ -12,150 +18,178 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Onest:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-/* Сводка сверху, ввод сразу под ней, график и история ниже; одна колонка на телефоне, две на широком экране */
+/* Телефон прежде всего: ввод веса сверху крупно, сводка 2×2, график, редкое (замеры, копия) свёрнуто; на широком экране две колонки */
 :root{
   --bg:#f3f5f2; --surface:#ffffff; --ink:#1d2a26; --muted:#64716c; --line:#dde3df;
-  --accent:#2f6f5e; --accent-soft:#dcebe5; --avg:#2f6f5e; --dot:#9fb7ae; --goal:#c2703d;
+  --accent:#2f6f5e; --accent-ink:#ffffff; --accent-soft:#dcebe5; --avg:#2f6f5e; --dot:#9fb7ae; --goal:#c2703d;
   --good:#2f7d4f; --good-bg:#e1f1e6; --warn:#a86a10; --warn-bg:#fbefd9; --bad:#b33a3a; --bad-bg:#f8e1e0;
-  --display:"Unbounded", "Arial Black", sans-serif; --body:"Onest", "Segoe UI", Arial, sans-serif;
+  --display:"Unbounded", "Arial Black", sans-serif; --body:"Onest", -apple-system, "Segoe UI", Arial, sans-serif;
   color-scheme:light;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     --bg:#141a18; --surface:#1d2522; --ink:#e6ece9; --muted:#9aa8a2; --line:#2f3a36;
-    --accent:#6cc2a6; --accent-soft:#23392f; --avg:#6cc2a6; --dot:#4f6a60; --goal:#e39a68;
+    --accent:#6cc2a6; --accent-ink:#0f1a16; --accent-soft:#23392f; --avg:#6cc2a6; --dot:#4f6a60; --goal:#e39a68;
     --good:#7fd29b; --good-bg:#1f3527; --warn:#f0bd62; --warn-bg:#3a2e17; --bad:#f08c8c; --bad-bg:#3d2222;
     color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
   --bg:#141a18; --surface:#1d2522; --ink:#e6ece9; --muted:#9aa8a2; --line:#2f3a36;
-  --accent:#6cc2a6; --accent-soft:#23392f; --avg:#6cc2a6; --dot:#4f6a60; --goal:#e39a68;
+  --accent:#6cc2a6; --accent-ink:#0f1a16; --accent-soft:#23392f; --avg:#6cc2a6; --dot:#4f6a60; --goal:#e39a68;
   --good:#7fd29b; --good-bg:#1f3527; --warn:#f0bd62; --warn-bg:#3a2e17; --bad:#f08c8c; --bad-bg:#3d2222;
   color-scheme:dark;
 }
-*{box-sizing:border-box}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 html,body{margin:0}
-body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);padding:20px 16px 48px}
-.wrap{max-width:980px;margin:0 auto;display:grid;gap:16px}
-header{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px}
-h1{font:700 26px/1.15 var(--display);margin:0;text-wrap:balance}
-h2{font:500 15px/1.3 var(--display);margin:0 0 12px;text-wrap:balance}
-.sub{color:var(--muted);font-size:14px}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px}
-.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-.tile{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;display:grid;gap:4px;align-content:start}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);touch-action:manipulation;
+  padding:calc(env(safe-area-inset-top) + 14px) max(16px, env(safe-area-inset-right)) calc(env(safe-area-inset-bottom) + 32px) max(16px, env(safe-area-inset-left))}
+.wrap{max-width:980px;margin:0 auto;display:grid;gap:14px}
+header{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 12px}
+h1{font:700 24px/1.15 var(--display);margin:0;text-wrap:balance}
+h2{font:500 15px/1.3 var(--display);margin:0;text-wrap:balance}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;display:grid;gap:12px}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px 14px;display:grid;gap:4px;align-content:start;min-width:0}
 .tile .k{color:var(--muted);font-size:13px}
-.tile .v{font:700 26px/1.1 var(--display);font-variant-numeric:tabular-nums}
-.tile .n{font-size:13px;color:var(--muted)}
-.pill{display:inline-block;padding:2px 10px;border-radius:99px;font-size:13px;font-weight:600;justify-self:start}
+.tile .v{font:700 24px/1.1 var(--display);font-variant-numeric:tabular-nums;white-space:nowrap}
+.tile .n{font-size:13px;line-height:1.35;color:var(--muted)}
+.pill{display:inline-block;padding:3px 10px;border-radius:99px;font-size:13px;font-weight:600;justify-self:start;line-height:1.3}
 .pill.good{background:var(--good-bg);color:var(--good)}
 .pill.warn{background:var(--warn-bg);color:var(--warn)}
 .pill.bad{background:var(--bad-bg);color:var(--bad)}
 .pill.none{background:var(--accent-soft);color:var(--muted)}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-form{display:flex;flex-wrap:wrap;gap:10px;align-items:end}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
 label{display:grid;gap:4px;font-size:13px;color:var(--muted)}
-input{font:16px var(--body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:9px 10px;width:130px;font-variant-numeric:tabular-nums}
-input[type=date]{width:150px}
-input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-button{font:600 15px var(--body);border:0;border-radius:10px;padding:10px 16px;cursor:pointer;background:var(--accent);color:var(--surface)}
-button.ghost{background:transparent;color:var(--muted);border:1px solid var(--line);padding:6px 10px;font-size:13px}
-button.del{background:transparent;color:var(--muted);padding:4px 8px;font-size:13px;font-weight:500}
+input,textarea{font:16px var(--body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px;width:100%;min-height:44px;font-variant-numeric:tabular-nums;-webkit-appearance:none;appearance:none}
+input[type=date]{min-height:44px;display:block}
+input:focus-visible,textarea:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button{font:600 16px var(--body);border:0;border-radius:12px;padding:10px 16px;min-height:44px;cursor:pointer;background:var(--accent);color:var(--accent-ink)}
+button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line);font-weight:500;font-size:15px}
+button.del{background:transparent;color:var(--muted);padding:6px 4px;min-height:40px;font-size:14px;font-weight:500}
 button.del.armed{color:var(--bad);font-weight:600}
 button:disabled{opacity:.5;cursor:default}
-.msg{font-size:13px;color:var(--muted);min-height:1.2em;width:100%}
+.msg{font-size:14px;color:var(--muted);min-height:1.3em}
 .msg.err{color:var(--bad)}
-.chartbox{overflow-x:auto}
+.msg.ok{color:var(--good)}
+/* ввод веса */
+.wform{display:grid;gap:10px}
+.wrow{display:grid;grid-template-columns:56px 1fr 56px;gap:8px;align-items:stretch}
+.wrow button{font:500 22px/1 var(--body);padding:0;background:var(--accent-soft);color:var(--accent);min-height:64px}
+#wKg{font:700 34px/1 var(--display);text-align:center;min-height:64px;padding:8px}
+.wfoot{display:grid;grid-template-columns:1fr 1.3fr;gap:8px}
+.wfoot button{min-height:52px;font-size:17px}
+/* замеры */
+.mform{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.mform .full{grid-column:1 / -1}
+/* график */
 svg text{fill:var(--muted);font:12px var(--body)}
-.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted);margin-top:6px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--muted)}
 .legend i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:6px}
+.goal-edit{display:flex;gap:8px;align-items:center;font-size:14px;color:var(--muted)}
+.goal-edit input{width:76px;text-align:center;padding:6px 8px;min-height:40px}
+.head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;align-items:center}
+/* таблицы */
 table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:15px}
 th{text-align:left;font-weight:500;color:var(--muted);font-size:13px;padding:6px 4px;border-bottom:1px solid var(--line)}
-td{padding:7px 4px;border-bottom:1px solid var(--line)}
+td{padding:4px;border-bottom:1px solid var(--line);height:44px}
 td.num,th.num{text-align:right}
-.tablebox{overflow-x:auto;max-height:420px;overflow-y:auto}
-.empty{color:var(--muted);font-size:14px;padding:8px 0}
+tr.more{display:none}
+table.all tr.more{display:table-row}
+.tablebox{overflow-x:auto}
+.empty{color:var(--muted);font-size:14px}
 .status{font-size:13px;color:var(--muted)}
 .status.err{color:var(--bad)}
-.goal-edit{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted)}
-.goal-edit input{width:80px;padding:5px 8px;font-size:14px}
-.tip{font-size:13px;color:var(--muted);margin:10px 0 0}
-@media (max-width:760px){.tiles{grid-template-columns:1fr 1fr}.grid2{grid-template-columns:1fr}}
-@media (max-width:400px){.tile .v{font-size:22px}input{width:120px}}
-@media (prefers-reduced-motion:no-preference){button{transition:opacity .15s}}
+.tip{font-size:13px;line-height:1.45;color:var(--muted);margin:0}
+.d{font-size:13px;color:var(--muted)}
+/* свёрнутые разделы */
+details.card{gap:0}
+details.card[open]{gap:12px}
+summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:28px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"";width:9px;height:9px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg) translateY(-3px);flex:none}
+details[open] > summary::after{transform:rotate(-135deg) translateY(-2px)}
+summary .note{font-size:13px;color:var(--muted);margin-left:auto}
+.btnrow{display:flex;flex-wrap:wrap;gap:8px}
+.btnrow button{flex:1 1 160px}
+@media (max-width:760px){.tiles{grid-template-columns:1fr 1fr}.cols{grid-template-columns:1fr}}
+@media (max-width:360px){.tile .v{font-size:20px}#wKg{font-size:28px}}
+@media (prefers-reduced-motion:no-preference){button{transition:opacity .15s,transform .1s}button:active{transform:scale(.97)}}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <div>
-      <h1>Трекер веса</h1>
-      <div class="sub">Вес по утрам и замеры раз в 2–4 недели</div>
-    </div>
+    <h1>Трекер веса</h1>
     <div class="status" id="status">Записи хранятся только в этом телефоне</div>
   </header>
 
-  <section class="tiles" aria-label="Сводка">
-    <div class="tile"><span class="k">Среднее за 7 дней</span><span class="v" id="tAvg">—</span><span class="n" id="tAvgN">нет записей</span></div>
-    <div class="tile"><span class="k">Темп за неделю</span><span class="v" id="tPace">—</span><span class="pill none" id="tPaceP">нужно 8+ дней</span></div>
-    <div class="tile"><span class="k">Сброшено с начала</span><span class="v" id="tLost">—</span><span class="n" id="tLostN">—</span></div>
-    <div class="tile"><span class="k">До цели</span><span class="v" id="tLeft">—</span><span class="n" id="tLeftN">—</span></div>
-  </section>
-
-  <div class="grid2">
-    <section class="card">
-      <h2>Вес сегодня</h2>
-      <form id="fW">
-        <label for="wDate">Дата<input type="date" id="wDate" required></label>
-        <label for="wKg">Вес, кг<input type="text" id="wKg" inputmode="decimal" step="0.1" min="30" max="200" placeholder="67,4" required></label>
-        <button type="submit" id="wBtn">Записать</button>
+  <div class="cols">
+    <section class="card" aria-labelledby="hW">
+      <div class="head"><h2 id="hW">Вес</h2><span class="d" id="wHint">утром, до еды и воды</span></div>
+      <form id="fW" class="wform" novalidate>
+        <div class="wrow">
+          <button type="button" id="wMinus" aria-label="Минус 0,1 кг">−</button>
+          <input type="text" id="wKg" inputmode="decimal" autocomplete="off" placeholder="67,4" aria-label="Вес, кг">
+          <button type="button" id="wPlus" aria-label="Плюс 0,1 кг">+</button>
+        </div>
+        <div class="wfoot">
+          <input type="date" id="wDate" aria-label="Дата" required>
+          <button type="submit" id="wBtn">Записать</button>
+        </div>
         <div class="msg" id="wMsg"></div>
       </form>
-      <p class="tip">Утром, после туалета, до еды и воды. Если запись на эту дату уже есть, она заменится.</p>
     </section>
-    <section class="card">
-      <h2>Замеры, см</h2>
-      <form id="fM">
-        <label for="mDate">Дата<input type="date" id="mDate" required></label>
-        <label for="mWaist">Талия<input type="text" id="mWaist" inputmode="decimal" step="0.5" min="30" max="200"></label>
-        <label for="mHips">Бёдра<input type="text" id="mHips" inputmode="decimal" step="0.5" min="30" max="200"></label>
-        <label for="mChest">Грудь<input type="text" id="mChest" inputmode="decimal" step="0.5" min="30" max="200"></label>
-        <button type="submit" id="mBtn">Записать</button>
-        <div class="msg" id="mMsg"></div>
-      </form>
-      <p class="tip">Сантиметр по голому телу, утром: талия по самому узкому месту, бёдра по самому широкому.</p>
+
+    <section class="tiles" aria-label="Сводка">
+      <div class="tile"><span class="k">Среднее за 7 дней</span><span class="v" id="tAvg">—</span><span class="n" id="tAvgN">нет записей</span></div>
+      <div class="tile"><span class="k">Темп за неделю</span><span class="v" id="tPace">—</span><span class="pill none" id="tPaceP">нужно 8+ дней</span></div>
+      <div class="tile"><span class="k">Сброшено</span><span class="v" id="tLost">—</span><span class="n" id="tLostN">—</span></div>
+      <div class="tile"><span class="k">До цели</span><span class="v" id="tLeft">—</span><span class="n" id="tLeftN">—</span></div>
     </section>
   </div>
 
-  <section class="card">
-    <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;align-items:baseline">
-      <h2>Динамика</h2>
-      <div class="goal-edit"><label for="goal" style="display:flex;gap:6px;align-items:center;color:var(--muted)">Цель, кг <input type="text" inputmode="decimal" id="goal" step="0.5" min="30" max="200" value="58"></label></div>
+  <section class="card" aria-labelledby="hC">
+    <div class="head">
+      <h2 id="hC">Динамика</h2>
+      <label class="goal-edit" for="goal">Цель, кг <input type="text" inputmode="decimal" id="goal" value="58" autocomplete="off"></label>
     </div>
-    <div class="chartbox"><svg id="chart" width="100%" height="280" role="img" aria-label="График веса"></svg></div>
+    <svg id="chart" width="100%" height="240" role="img" aria-label="График веса"></svg>
     <div class="legend"><span><i style="background:var(--avg)"></i>среднее за 7 дней</span><span><i style="background:var(--dot);height:8px;width:8px;border-radius:50%"></i>вес по дням</span><span><i style="background:var(--goal)"></i>цель</span></div>
   </section>
 
-  <div class="grid2">
-    <section class="card">
-      <h2>Записи веса</h2>
-      <div class="tablebox"><table><thead><tr><th>Дата</th><th class="num">Вес</th><th class="num">Среднее 7 дн.</th><th></th></tr></thead><tbody id="wRows"></tbody></table></div>
+  <div class="cols">
+    <section class="card" aria-labelledby="hR">
+      <h2 id="hR">Записи веса</h2>
+      <div class="tablebox"><table id="wTable"><thead><tr><th>Дата</th><th class="num">Вес</th><th class="num">Среднее</th><th></th></tr></thead><tbody id="wRows"></tbody></table></div>
       <div class="empty" id="wEmpty">Пока нет записей. Начните с сегодняшнего веса.</div>
+      <button class="ghost" type="button" id="wAll" hidden>Показать все</button>
     </section>
-    <section class="card">
-      <h2>Записи замеров</h2>
+
+    <details class="card" id="mBox">
+      <summary><h2>Замеры, см</h2><span class="note" id="mNote">раз в 2–4 недели</span></summary>
+      <form id="fM" class="mform" novalidate>
+        <label for="mWaist">Талия<input type="text" id="mWaist" inputmode="decimal" autocomplete="off"></label>
+        <label for="mHips">Бёдра<input type="text" id="mHips" inputmode="decimal" autocomplete="off"></label>
+        <label for="mChest">Грудь<input type="text" id="mChest" inputmode="decimal" autocomplete="off"></label>
+        <label for="mDate" class="full">Дата<input type="date" id="mDate" required></label>
+        <button type="submit" id="mBtn" class="full">Записать замеры</button>
+        <div class="msg full" id="mMsg"></div>
+      </form>
+      <p class="tip">Утром, сантиметром по голому телу: талия по самому узкому месту, бёдра по самому широкому.</p>
       <div class="tablebox"><table><thead><tr><th>Дата</th><th class="num">Талия</th><th class="num">Бёдра</th><th class="num">Грудь</th><th></th></tr></thead><tbody id="mRows"></tbody></table></div>
       <div class="empty" id="mEmpty">Пока нет замеров.</div>
-    </section>
+    </details>
   </div>
 
-  <section class="card">
-    <h2>Копия записей</h2>
-    <p class="tip" style="margin:0 0 10px">Записи живут только в этом телефоне. Раз в неделю нажимайте «Скопировать» и сохраняйте текст в заметки или отправляйте Зосе для разбора. Чтобы вернуть записи на новом телефоне, вставьте копию в поле и нажмите «Восстановить».</p>
-    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"><button class="ghost" id="copy" type="button">Скопировать записи</button><button class="ghost" id="restore" type="button">Восстановить из копии</button><span class="status" id="copyMsg"></span></div>
-    <label for="backup" style="margin-top:10px">Поле для копии<textarea id="backup" rows="3" style="width:100%;font:13px var(--body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px"></textarea></label>
-  </section>
+  <details class="card">
+    <summary><h2>Копия записей</h2><span class="note">раз в неделю</span></summary>
+    <p class="tip">Записи живут только в этом телефоне. Раз в неделю нажимайте «Скопировать» и сохраняйте текст в Заметки или отправляйте Зосе для разбора. На новом телефоне вставьте копию в поле и нажмите «Восстановить».</p>
+    <div class="btnrow"><button class="ghost" id="copy" type="button">Скопировать записи</button><button class="ghost" id="restore" type="button">Восстановить из копии</button></div>
+    <div class="msg" id="copyMsg"></div>
+    <label for="backup">Поле для копии<textarea id="backup" rows="3"></textarea></label>
+  </details>
 </div>
 
 <script>
@@ -241,13 +275,16 @@ td.num,th.num{text-align:right}
     }
 
     const wb = $("wRows"); wb.innerHTML = "";
-    weights.slice().reverse().forEach(e => {
+    weights.slice().reverse().forEach((e, i) => {
       const tr = document.createElement("tr");
+      if (i >= 10) tr.className = "more";
       tr.innerHTML = "<td>" + ruDate(e.date) + "</td><td class='num'>" + fmt(e.kg) + "</td><td class='num'>" + fmt(avg7(e.day)) + "</td><td class='num'></td>";
       tr.lastChild.appendChild(delBtn(() => delete store.weights[e.date]));
       wb.appendChild(tr);
     });
     $("wEmpty").style.display = weights.length ? "none" : "block";
+    $("wAll").hidden = weights.length <= 10 || $("wTable").classList.contains("all");
+    updateHint();
 
     const mb = $("mRows"); mb.innerHTML = "";
     const m0 = measures[0];
@@ -260,6 +297,7 @@ td.num,th.num{text-align:right}
       mb.appendChild(tr);
     });
     $("mEmpty").style.display = measures.length ? "none" : "block";
+    $("mNote").textContent = measures.length ? "последние " + ruDate(measures[measures.length-1].date) : "раз в 2–4 недели";
 
     drawChart();
   }
@@ -276,7 +314,7 @@ td.num,th.num{text-align:right}
   }
 
   function drawChart(){
-    const svg = $("chart"), W = Math.max(svg.clientWidth || 600, 320), H = 280;
+    const svg = $("chart"), W = Math.max(svg.clientWidth || 600, 300), H = 240;
     svg.setAttribute("viewBox", "0 0 " + W + " " + H);
     const L = 44, R = 12, T = 12, B = 28;
     if (!weights.length){
@@ -317,14 +355,30 @@ td.num,th.num{text-align:right}
   window.addEventListener("resize", () => drawChart());
 
   function setStatus(t, err){ const s = $("status"); s.textContent = t; s.className = "status" + (err ? " err" : ""); }
-  function msg(id, t, err){ const m = $(id); m.textContent = t; m.className = "msg" + (err ? " err" : ""); }
+  function msg(id, t, err){ const m = $(id); m.textContent = t; m.className = "msg" + (err ? " err" : " ok"); }
+
+  // Подсказка у даты и кнопки ±0,1 от последнего веса
+  function lastKg(){ return weights.length ? weights[weights.length-1].kg : null; }
+  function updateHint(){
+    const d = $("wDate").value, had = store.weights[d];
+    $("wHint").textContent = typeof had === "number" ? "на " + ruDate(d) + " уже " + fmt(had) + " кг, заменится" : "утром, до еды и воды";
+    const lk = lastKg(); $("wKg").placeholder = lk != null ? fmt(lk) : "67,4";
+  }
+  function step(delta){
+    const base = num($("wKg").value) ?? lastKg() ?? 67;
+    $("wKg").value = fmt(Math.round((base + delta) * 10) / 10);
+  }
+  $("wMinus").addEventListener("click", () => step(-0.1));
+  $("wPlus").addEventListener("click", () => step(0.1));
+  $("wDate").addEventListener("change", updateHint);
+  $("wAll").addEventListener("click", () => { $("wTable").classList.add("all"); $("wAll").hidden = true; });
 
   $("fW").addEventListener("submit", ev => {
     ev.preventDefault();
     const date = $("wDate").value, kg = num($("wKg").value);
     if (!isDate(date) || kg == null || kg < 30 || kg > 200){ msg("wMsg", "Введите вес от 30 до 200 кг", true); return; }
     store.weights[date] = kg;
-    if (save()){ $("wKg").value = ""; msg("wMsg", "Записано: " + fmt(kg) + " кг на " + ruDate(date)); }
+    if (save()){ $("wKg").value = ""; $("wKg").blur(); msg("wMsg", "Записано: " + fmt(kg) + " кг на " + ruDate(date)); }
     render();
   });
 
@@ -333,7 +387,7 @@ td.num,th.num{text-align:right}
     const date = $("mDate").value, waist = num($("mWaist").value), hips = num($("mHips").value), chest = num($("mChest").value);
     if (!isDate(date) || (waist == null && hips == null && chest == null)){ msg("mMsg", "Заполните хотя бы один замер", true); return; }
     store.measures[date] = {waist, hips, chest};
-    if (save()){ ["mWaist","mHips","mChest"].forEach(id => $(id).value = ""); msg("mMsg", "Замеры на " + ruDate(date) + " записаны"); }
+    if (save()){ ["mWaist","mHips","mChest"].forEach(id => $(id).value = ""); document.activeElement && document.activeElement.blur(); msg("mMsg", "Замеры на " + ruDate(date) + " записаны"); }
     render();
   });
 
@@ -344,7 +398,7 @@ td.num,th.num{text-align:right}
 
   $("copy").addEventListener("click", async () => {
     const text = "Трекер веса, копия от " + ruDate(today) + "\n" + JSON.stringify(store);
-    try { await navigator.clipboard.writeText(text); $("copyMsg").textContent = "Скопировано. Сохраните в заметки или отправьте Зосе."; }
+    try { await navigator.clipboard.writeText(text); msg("copyMsg", "Скопировано. Вставьте в Заметки или отправьте Зосе."); }
     catch(e){ $("backup").value = text; $("copyMsg").textContent = "Скопируйте текст из поля ниже вручную"; }
   });
 
