@@ -142,7 +142,7 @@ input{font-weight:500}
 svg text{fill:var(--ink);opacity:.8;font-weight:500}
 #mNote,#mCount,#wHint{color:var(--ink);font-weight:500}
 /* блоки без стекла: лёгкая прозрачная подложка, фото видно чётко */
-.hero,.card,.tile{background:rgba(255,255,255,.58);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.55);box-shadow:0 8px 24px rgba(40,10,25,.14)}
+.hero,.card,.tile{background:rgba(255,255,255,.36);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.55);box-shadow:0 8px 24px rgba(40,10,25,.14)}
 .hero::before,.card::before,.tile::before{display:none}
 .status:empty{display:none}
 h1,h2,.tile .k,label,th,.legend,summary,.goal-edit{color:var(--ink);font-weight:500;text-shadow:0 0 2px #fff, 0 0 6px #fff, 0 0 12px rgba(255,255,255,.85)}
@@ -166,6 +166,18 @@ h1{font-weight:400}
   padding:8px 8px 8px 16px;border-radius:99px;background:rgba(22,48,31,.92);color:#fff;font-size:15px;box-shadow:0 10px 26px rgba(0,0,0,.25);white-space:nowrap}
 .toast[hidden]{display:none}
 .toast button{min-height:38px;padding:6px 14px;background:#fff;color:var(--accent);font-size:15px}
+/* 4. подписи под цифрами в плитках — просто белый текст без подложки */
+.tile .n,.tile .pill,.tile .pill.good,.tile .pill.warn,.tile .pill.bad,.tile .pill.none{background:none;box-shadow:none;padding:0;border-radius:0;color:#fff;font-weight:500;text-shadow:0 1px 3px rgba(40,10,25,.55), 0 0 10px rgba(40,10,25,.35)}
+/* вкладки */
+:root{--c-waist:#1f5a34; --c-hips:#b4612e; --c-chest:#8a2f63}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:5px;border-radius:99px;background:rgba(255,255,255,.36);border:1px solid rgba(255,255,255,.55);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.tabs button{background:transparent;color:var(--ink);font-weight:600;min-height:42px;border-radius:99px;text-shadow:0 0 6px #fff}
+.tabs button[aria-selected="true"]{background:var(--accent);color:#fff;text-shadow:none;box-shadow:0 6px 14px rgba(31,90,52,.3)}
+.pane{display:grid;gap:14px}
+.pane[hidden]{display:none}
+.tiles.mtiles{grid-template-columns:repeat(3,1fr);gap:8px}
+.mtiles .tile{padding:12px}
+.mtiles .v{font-size:20px}
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.hero,.card,.tile{background:rgba(255,255,255,.85)}}
 @media (max-width:760px){.tiles{grid-template-columns:1fr 1fr}.cols{grid-template-columns:1fr}}
 @media (max-width:360px){.tile .v{font-size:22px}#wKg{font-size:32px}h1{font-size:30px}}
@@ -180,6 +192,12 @@ h1{font-weight:400}
     <div class="status" id="status"></div>
   </header>
 
+  <nav class="tabs" role="tablist" aria-label="Разделы">
+    <button type="button" role="tab" id="tabW" data-go="w" aria-selected="true">Вес</button>
+    <button type="button" role="tab" id="tabM" data-go="m" aria-selected="false">Замеры</button>
+  </nav>
+
+  <div class="pane" data-pane="w">
   <div class="cols">
     <section class="card" aria-labelledby="hW">
       <h2 id="hW">Вес</h2>
@@ -208,14 +226,24 @@ h1{font-weight:400}
     </section>
   </div>
 
-  <div class="cols">
-    <section class="card" aria-labelledby="hR">
+      <section class="card" aria-labelledby="hR">
       <h2 id="hR">Записи веса</h2>
       <div class="tablebox"><table id="wTable"><thead><tr><th>Дата</th><th class="num">Вес</th><th></th></tr></thead><tbody id="wRows"></tbody></table></div>
       <div class="empty" id="wEmpty">Пока нет записей. Начните с сегодняшнего веса.</div>
       <button class="ghost" type="button" id="wAll" hidden>Показать все</button>
     </section>
 
+  <section class="card" aria-labelledby="hC">
+    <div class="head">
+      <h2 id="hC">Динамика</h2>
+      <label class="goal-edit" for="goal">Цель, кг <input type="text" inputmode="decimal" id="goal" value="58" autocomplete="off"></label>
+    </div>
+    <svg id="chart" width="100%" height="240" role="img" aria-label="График веса"></svg>
+    <div class="legend"><span><i style="background:var(--avg)"></i>среднее за 7 дней</span><span><i style="background:var(--dot);height:8px;width:8px;border-radius:50%"></i>вес по дням</span><span><i style="background:var(--goal)"></i>цель</span></div>
+  </section>
+  </div>
+
+  <div class="pane" data-pane="m">
     <section class="card" id="mBox" aria-labelledby="hM">
       <div class="head"><h2 id="hM">Замеры, см</h2><span class="d" id="mNote">раз в 2–4 недели</span></div>
       <form id="fM" class="mform" novalidate>
@@ -232,6 +260,18 @@ h1{font-weight:400}
         <div class="empty" id="mEmpty">Пока нет замеров.</div>
       </details>
     </section>
+
+    <section class="tiles mtiles" aria-label="Изменение замеров">
+      <div class="tile"><span class="k">Талия</span><span class="v" id="mtW">—</span><span class="n" id="mtWn">нет замеров</span></div>
+      <div class="tile"><span class="k">Бёдра</span><span class="v" id="mtH">—</span><span class="n" id="mtHn">нет замеров</span></div>
+      <div class="tile"><span class="k">Грудь</span><span class="v" id="mtC">—</span><span class="n" id="mtCn">нет замеров</span></div>
+    </section>
+
+    <section class="card" aria-labelledby="hMC">
+      <div class="head"><h2 id="hMC">Динамика замеров</h2><span class="d">изменение с первого замера, см</span></div>
+      <svg id="mChart" width="100%" height="220" role="img" aria-label="График замеров"></svg>
+      <div class="legend"><span><i style="background:var(--c-waist)"></i>талия</span><span><i style="background:var(--c-hips)"></i>бёдра</span><span><i style="background:var(--c-chest)"></i>грудь</span></div>
+    </section>
   </div>
 
   <details class="card">
@@ -240,15 +280,6 @@ h1{font-weight:400}
     <button class="ghost" id="copy" type="button">Скопировать записи</button>
     <div class="msg" id="copyMsg"></div>
   </details>
-
-  <section class="card" aria-labelledby="hC">
-    <div class="head">
-      <h2 id="hC">Динамика</h2>
-      <label class="goal-edit" for="goal">Цель, кг <input type="text" inputmode="decimal" id="goal" value="58" autocomplete="off"></label>
-    </div>
-    <svg id="chart" width="100%" height="240" role="img" aria-label="График веса"></svg>
-    <div class="legend"><span><i style="background:var(--avg)"></i>среднее за 7 дней</span><span><i style="background:var(--dot);height:8px;width:8px;border-radius:50%"></i>вес по дням</span><span><i style="background:var(--goal)"></i>цель</span></div>
-  </section>
 </div>
 
 <div class="toast" id="toast" role="status" hidden><span id="toastTxt"></span><button type="button" id="undo">Вернуть</button></div>
@@ -359,6 +390,7 @@ h1{font-weight:400}
     });
     $("mEmpty").style.display = measures.length ? "none" : "block";
     const ml = measures[measures.length-1];
+    renderMeasures();
     $("mCount").textContent = ml ? [["талия", ml.waist], ["бёдра", ml.hips], ["грудь", ml.chest]].filter(p => p[1] != null).map(p => p[0] + " " + fmt(p[1])).join(" · ") : "пусто";
     $("mNote").textContent = measures.length ? "последние " + ruDate(measures[measures.length-1].date) : "раз в 2–4 недели";
 
@@ -473,9 +505,57 @@ h1{font-weight:400}
   });
 
 
+  // Вкладки «Вес» и «Замеры»
+  function showTab(t){
+    document.querySelectorAll(".pane").forEach(p => p.hidden = p.dataset.pane !== t);
+    document.querySelectorAll(".tabs button").forEach(b => b.setAttribute("aria-selected", String(b.dataset.go === t)));
+    try { localStorage.setItem("weight-tracker-tab", t); } catch(e){}
+    drawChart(); drawMChart();
+  }
+  document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => showTab(b.dataset.go)));
+
+  const MK = [["waist","mtW","--c-waist"],["hips","mtH","--c-hips"],["chest","mtC","--c-chest"]];
+  function renderMeasures(){
+    MK.forEach(([k,id]) => {
+      const pts = measures.filter(e => e[k] != null);
+      const v = $(id), n = $(id + "n");
+      if (!pts.length){ v.textContent = "—"; n.textContent = "нет замеров"; return; }
+      const last = pts[pts.length-1], first = pts[0];
+      v.textContent = fmt(last[k]) + " см";
+      n.textContent = pts.length > 1 ? sign(last[k] - first[k]) + " см с " + ruDate(first.date) : "первый замер " + ruDate(first.date);
+    });
+    drawMChart();
+  }
+  function drawMChart(){
+    const svg = $("mChart"); if (!svg || svg.closest(".pane").hidden) return;
+    const W = Math.max(svg.clientWidth || 600, 300), H = 220, L = 40, R = 12, T = 12, B = 26;
+    svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+    const ms = measures.filter(e => MK.some(([k]) => e[k] != null));
+    if (!ms.length){ svg.innerHTML = "<text x='" + W/2 + "' y='" + H/2 + "' text-anchor='middle'>Здесь появится график после первых замеров</text>"; return; }
+    const days = ms.map(e => dayNum(e.date)), d0 = Math.min(...days), d1 = Math.max(Math.max(...days), d0 + 14);
+    const base = {}; MK.forEach(([k]) => { const f = ms.find(e => e[k] != null); if (f) base[k] = f[k]; });
+    const dv = (e, k) => Math.round((e[k] - base[k]) * 10) / 10;
+    const vals = [0]; ms.forEach(e => MK.forEach(([k]) => { if (e[k] != null) vals.push(dv(e, k)); }));
+    let lo = Math.floor(Math.min(...vals) - 1), hi = Math.ceil(Math.max(...vals) + 1);
+    const x = d => L + (d - d0) / (d1 - d0) * (W - L - R), y = v => T + (hi - v) / (hi - lo) * (H - T - B);
+    const step = Math.max(1, Math.ceil((hi - lo) / 6));
+    let s = "";
+    for (let v = lo; v <= hi; v += step){ s += "<line x1='" + L + "' x2='" + (W-R) + "' y1='" + y(v) + "' y2='" + y(v) + "' stroke='" + (v === 0 ? "var(--muted)" : "var(--line)") + "'/><text x='" + (L-6) + "' y='" + (y(v)+4) + "' text-anchor='end'>" + (v > 0 ? "+" + v : v < 0 ? "−" + (-v) : "0") + "</text>"; }
+    [d0, d1].forEach((d, i) => { const dt = new Date(d * DAY); s += "<text x='" + x(d) + "' y='" + (H-6) + "' text-anchor='" + (i ? "end" : "start") + "'>" + pad(dt.getDate()) + "." + pad(dt.getMonth()+1) + "</text>"; });
+    MK.forEach(([k, , c]) => {
+      const p = ms.filter(e => e[k] != null).map(e => [x(dayNum(e.date)), y(dv(e, k))]);
+      if (p.length > 1) s += "<path d='" + p.map((q,i) => (i ? "L" : "M") + q[0].toFixed(1) + " " + q[1].toFixed(1)).join(" ") + "' fill='none' stroke='var(" + c + ")' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/>";
+      p.forEach(q => { s += "<circle cx='" + q[0] + "' cy='" + q[1] + "' r='4.5' fill='var(" + c + ")' stroke='#fff' stroke-width='1.5'/>"; });
+    });
+    svg.innerHTML = s;
+  }
+  window.addEventListener("resize", () => drawMChart());
+
   if (!canSave) setStatus("Браузер не даёт сохранять записи. Откройте трекер не в режиме инкогнито.", true);
   try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch(e){}
   render();
+  let startTab = "w"; try { startTab = localStorage.getItem("weight-tracker-tab") === "m" ? "m" : "w"; } catch(e){}
+  showTab(startTab);
 
   if ("serviceWorker" in navigator){ window.addEventListener("load", () => { try { navigator.serviceWorker.register("sw.js").catch(() => {}); } catch(e){} }); }
 })();
