@@ -178,6 +178,11 @@ h1{font-weight:400}
 .tiles.mtiles{grid-template-columns:repeat(3,1fr);gap:8px}
 .mtiles .tile{padding:12px}
 .mtiles .v{font-size:20px}
+.goalchip{justify-self:start;margin-top:4px;min-height:34px;padding:4px 12px;font-size:14px;font-weight:600;border-radius:99px;background:rgba(255,255,255,.8);color:var(--accent);border:1px solid rgba(255,255,255,.9)}
+.goalform{display:flex;gap:6px;margin-top:4px}
+.goalform input{width:84px;min-height:38px;padding:6px 10px;text-align:center;border-radius:99px;background:rgba(255,255,255,.85)}
+.goalform button{min-height:38px;padding:6px 14px;font-size:15px}
+.goalform[hidden],.goalchip[hidden]{display:none}
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.hero,.card,.tile{background:rgba(255,255,255,.85)}}
 @media (max-width:760px){.tiles{grid-template-columns:1fr 1fr}.cols{grid-template-columns:1fr}}
 @media (max-width:360px){.tile .v{font-size:22px}#wKg{font-size:32px}h1{font-size:30px}}
@@ -210,7 +215,7 @@ h1{font-weight:400}
         </label>
         <div class="wrow">
           <button type="button" id="wMinus" aria-label="Минус 0,1 кг"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
-          <input type="text" id="wKg" inputmode="decimal" autocomplete="off" placeholder="67,4" aria-label="Вес, кг">
+          <input type="text" id="wKg" inputmode="decimal" autocomplete="off" aria-label="Вес, кг">
           <button type="button" id="wPlus" aria-label="Плюс 0,1 кг"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5v14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
         </div>
         <button type="submit" id="wBtn">Записать</button>
@@ -222,7 +227,9 @@ h1{font-weight:400}
       <div class="tile"><span class="k">Среднее за 7 дней</span><span class="v" id="tAvg">—</span><span class="n" id="tAvgN">нет записей</span></div>
       <div class="tile"><span class="k">Темп за неделю</span><span class="v" id="tPace">—</span><span class="pill none" id="tPaceP">нужно 8+ дней</span></div>
       <div class="tile"><span class="k">Сброшено</span><span class="v" id="tLost">—</span><span class="n" id="tLostN">—</span></div>
-      <div class="tile"><span class="k">До цели</span><span class="v" id="tLeft">—</span><span class="n" id="tLeftN">—</span></div>
+      <div class="tile"><span class="k">До цели</span><span class="v" id="tLeft">—</span><span class="n" id="tLeftN">—</span>
+        <button type="button" class="goalchip" id="goalBtn">цель 58 кг ✎</button>
+        <form class="goalform" id="goalForm" hidden novalidate><input type="text" inputmode="decimal" id="goal2" aria-label="Цель, кг" autocomplete="off"><button type="submit">OK</button></form></div>
     </section>
   </div>
 
@@ -366,6 +373,8 @@ h1{font-weight:400}
       $("tLost").textContent = "—"; $("tLostN").textContent = "—"; $("tLeft").textContent = "—"; $("tLeftN").textContent = "цель " + fmt(goal) + " кг";
     }
 
+    $("goalBtn").textContent = "цель " + fmt(goal) + " кг ✎";
+    if (document.activeElement !== $("goal")) $("goal").value = fmt(goal);
     const wb = $("wRows"); wb.innerHTML = "";
     weights.slice().reverse().forEach((e, i) => {
       const tr = document.createElement("tr");
@@ -464,7 +473,6 @@ h1{font-weight:400}
       const diff = dayNum(today) - dayNum(d), long = parseIso(d).toLocaleDateString("ru-RU", {day:"numeric", month:"long"});
       $("wDateTxt").textContent = diff === 0 ? "Сегодня, " + long : diff === 1 ? "Вчера, " + long : long;
     }
-    const lk = lastKg(); $("wKg").placeholder = lk != null ? fmt(lk) : "67,4";
   }
   function step(delta){
     const base = num($("wKg").value) ?? lastKg() ?? 67;
@@ -493,6 +501,15 @@ h1{font-weight:400}
     render();
   });
 
+  $("goalBtn").addEventListener("click", () => {
+    $("goalBtn").hidden = true; $("goalForm").hidden = false; $("goal2").value = fmt(goal); $("goal2").focus(); $("goal2").select();
+  });
+  $("goalForm").addEventListener("submit", ev => {
+    ev.preventDefault();
+    const g = num($("goal2").value);
+    if (g != null && g >= 30 && g <= 200){ goal = store.goal = g; save(); }
+    $("goalForm").hidden = true; $("goalBtn").hidden = false; $("goal2").blur(); render();
+  });
   $("goal").addEventListener("input", () => {
     const g = num($("goal").value); if (g == null || g < 30 || g > 200) return;
     goal = store.goal = g; save(); render();
