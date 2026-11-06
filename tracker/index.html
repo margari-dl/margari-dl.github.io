@@ -72,6 +72,7 @@ button.del{background:transparent;color:var(--muted);padding:6px 4px;min-height:
 button.del.armed{color:var(--bad);font-weight:600}
 button:disabled{opacity:.5;cursor:default}
 .msg{font-size:14px;color:var(--muted);min-height:1.3em}
+.msg:empty{display:none}
 .msg.err{color:var(--bad)}
 .msg.ok{color:var(--good)}
 /* ввод веса */
@@ -159,7 +160,7 @@ h1{font-weight:400}
 #wRows tr td:last-child,#mRows tr td:last-child{border-radius:0 12px 12px 0}
 #wTable,#mBox table{border-collapse:separate;border-spacing:0 6px}
 #wRows td,#mRows td{border-bottom:0}
-#wHint:not(:empty),#mNote,#mCount,summary .note{color:var(--ink);font-weight:500;background:rgba(255,255,255,.7);border-radius:99px;padding:2px 10px}
+#wHint:not(:empty),#mNote:not(:empty),#mCount,summary .note{color:var(--ink);font-weight:500;background:rgba(255,255,255,.7);border-radius:99px;padding:2px 10px}
 .datechip{background:var(--gloss), rgba(255,255,255,.8)}
 #chart{background:rgba(255,255,255,.6);border-radius:16px}
 .toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 16px);transform:translateX(-50%);z-index:10;display:flex;align-items:center;gap:12px;
@@ -252,7 +253,7 @@ h1{font-weight:400}
 
   <div class="pane" data-pane="m">
     <section class="card" id="mBox" aria-labelledby="hM">
-      <div class="head"><h2 id="hM">Замеры, см</h2><span class="d" id="mNote">раз в 2–4 недели</span></div>
+      <div class="head"><h2 id="hM">Замеры, см</h2><span class="d" id="mNote"></span></div>
       <form id="fM" class="mform" novalidate>
         <label for="mWaist">Талия<input type="text" id="mWaist" inputmode="decimal" autocomplete="off"></label>
         <label for="mHips">Бёдра<input type="text" id="mHips" inputmode="decimal" autocomplete="off"></label>
@@ -401,7 +402,7 @@ h1{font-weight:400}
     const ml = measures[measures.length-1];
     renderMeasures();
     $("mCount").textContent = ml ? [["талия", ml.waist], ["бёдра", ml.hips], ["грудь", ml.chest]].filter(p => p[1] != null).map(p => p[0] + " " + fmt(p[1])).join(" · ") : "пусто";
-    $("mNote").textContent = measures.length ? "последние " + ruDate(measures[measures.length-1].date) : "раз в 2–4 недели";
+    $("mNote").textContent = measures.length ? "последние " + ruDate(measures[measures.length-1].date) : "";
 
     drawChart();
   }
@@ -488,7 +489,7 @@ h1{font-weight:400}
     const date = $("wDate").value, kg = num($("wKg").value);
     if (!isDate(date) || kg == null || kg < 30 || kg > 200){ msg("wMsg", "Введите вес от 30 до 200 кг", true); return; }
     store.weights[date] = kg;
-    if (save()){ $("wKg").value = ""; $("wKg").blur(); msg("wMsg", "Записано: " + fmt(kg) + " кг на " + ruDate(date)); }
+    if (save()){ $("wKg").value = ""; $("wKg").blur(); msg("wMsg", ""); }
     render();
   });
 
@@ -497,7 +498,7 @@ h1{font-weight:400}
     const date = $("mDate").value, waist = num($("mWaist").value), hips = num($("mHips").value), chest = num($("mChest").value);
     if (!isDate(date) || (waist == null && hips == null && chest == null)){ msg("mMsg", "Заполните хотя бы один замер", true); return; }
     store.measures[date] = {waist, hips, chest};
-    if (save()){ ["mWaist","mHips","mChest"].forEach(id => $(id).value = ""); document.activeElement && document.activeElement.blur(); msg("mMsg", "Замеры на " + ruDate(date) + " записаны"); }
+    if (save()){ ["mWaist","mHips","mChest"].forEach(id => $(id).value = ""); document.activeElement && document.activeElement.blur(); msg("mMsg", ""); }
     render();
   });
 
