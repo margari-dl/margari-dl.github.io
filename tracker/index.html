@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Трекер веса</title>
-<meta name="theme-color" content="#e9ece6">
+<meta name="theme-color" content="#d9608a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -19,13 +19,17 @@
 <style>
 /* Фон всей страницы — листья за матовым стеклом; поля и карточки — светлое полупрозрачное стекло. Одна светлая тема по замыслу */
 :root{
-  --bg:#e9ece6; --glass:rgba(255,255,255,.36); --glass-2:rgba(255,255,255,.5); --edge:rgba(255,255,255,.75);
+  --bg:#d9608a; --glass:rgba(255,255,255,.32); --glass-2:rgba(255,255,255,.5); --edge:rgba(255,255,255,.75);
   --ink:#16301f; --muted:#34493b; --line:rgba(22,48,31,.12);
   --accent:#1f5a34; --accent-ink:#ffffff; --accent-soft:rgba(31,90,52,.12);
   --avg:#1f5a34; --dot:rgba(31,90,52,.35); --goal:#b4612e;
   --good:#1f6b3a; --good-bg:rgba(31,107,58,.13); --warn:#94600e; --warn-bg:rgba(200,140,30,.16); --bad:#a8302c; --bad-bg:rgba(200,60,50,.13);
   --display:"Onest", -apple-system, "Segoe UI", Arial, sans-serif; --body:"Onest", -apple-system, "Segoe UI", Arial, sans-serif;
-  --ribs:repeating-linear-gradient(90deg, rgba(255,255,255,.35) 0 1px, rgba(255,255,255,0) 1px 9px, rgba(22,48,31,.04) 9px 10px, rgba(255,255,255,.12) 10px 18px);
+  --ribs:repeating-linear-gradient(90deg, rgba(255,255,255,.22) 0, rgba(255,255,255,.07) 2px, rgba(255,255,255,0) 3.5px, rgba(40,10,25,.06) 5.5px, rgba(255,255,255,.14) 7px);
+  --ribs-soft:repeating-linear-gradient(90deg, rgba(255,255,255,.14) 0, rgba(255,255,255,.04) 2px, rgba(255,255,255,0) 3.5px, rgba(40,10,25,.04) 5.5px, rgba(255,255,255,.09) 7px);
+  --ribs-dark:repeating-linear-gradient(90deg, rgba(255,255,255,.16) 0, rgba(255,255,255,.04) 2px, rgba(255,255,255,0) 3.5px, rgba(0,0,0,.14) 5.5px, rgba(255,255,255,.10) 7px);
+  --gloss:linear-gradient(165deg, rgba(255,255,255,.55) 0%, rgba(255,255,255,.14) 28%, rgba(255,255,255,0) 52%, rgba(255,255,255,0) 78%, rgba(255,255,255,.16) 100%);
+  --shine:inset 0 1px 0 rgba(255,255,255,.95), inset 0 -1px 0 rgba(255,255,255,.25), inset 1px 0 0 rgba(255,255,255,.35);
   color-scheme:light;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -34,20 +38,19 @@ html,body{margin:0}
 body{background:transparent;color:var(--ink);font:16px/1.5 var(--body);touch-action:manipulation;
   padding:calc(env(safe-area-inset-top) + 12px) max(16px, env(safe-area-inset-right)) calc(env(safe-area-inset-bottom) + 32px) max(16px, env(safe-area-inset-left))}
 .backdrop{position:fixed;inset:0;z-index:-1;background:url("img/bg.jpg") center/cover no-repeat, var(--bg)}
-.backdrop::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(233,236,230,.1))}
+.backdrop::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(0,0,0,.08))}
 .wrap{max-width:980px;margin:0 auto;display:grid;gap:14px}
 h1{font:300 34px/1.02 var(--display);letter-spacing:-.02em;margin:0;text-wrap:balance}
 h2{font:500 17px/1.3 var(--display);letter-spacing:-.01em;margin:0;text-wrap:balance}
 /* шапка: матовое стекло с рифлением */
 .hero{position:relative;overflow:hidden;border-radius:30px;padding:18px 20px;display:grid;gap:4px}
-.hero::before{content:"";position:absolute;inset:0;background:var(--ribs);pointer-events:none}
-.hero > *{position:relative}
+.hero > *,.card > *{position:relative}
+.hero::before,.card::before,.tile::before{content:"";position:absolute;inset:0;background:var(--gloss), var(--ribs);border-radius:inherit;pointer-events:none}
 .hero,.card,.tile{background:var(--glass);-webkit-backdrop-filter:blur(10px) saturate(120%);backdrop-filter:blur(10px) saturate(120%);
-  border:1px solid var(--edge);box-shadow:0 8px 28px rgba(22,48,31,.12), inset 0 1px 0 rgba(255,255,255,.9)}
-.card{border-radius:26px;padding:18px;display:grid;gap:12px}
+  border:1px solid var(--edge);box-shadow:0 8px 28px rgba(22,48,31,.14), var(--shine)}
+.card{position:relative;overflow:hidden;border-radius:26px;padding:18px;display:grid;gap:12px}
 .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
 .tile{position:relative;overflow:hidden;border-radius:22px;padding:13px 15px;display:grid;gap:4px;align-content:start;min-width:0}
-.tile::before{content:"";position:absolute;inset:0;background:var(--ribs);pointer-events:none}
 .tile > *{position:relative}
 .tile .k{color:var(--muted);font-size:13px}
 .tile .v{font:500 26px/1.1 var(--display);letter-spacing:-.02em;font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -73,12 +76,17 @@ button:disabled{opacity:.5;cursor:default}
 .msg.ok{color:var(--good)}
 /* ввод веса */
 .wform{display:grid;gap:10px}
-.wrow{display:grid;grid-template-columns:58px 1fr 58px;gap:8px;align-items:stretch}
-.wrow button{font:300 28px/1 var(--body);padding:0;background:var(--glass-2);color:var(--ink);border:1px solid var(--line);min-height:68px;border-radius:22px}
-#wKg{font:300 40px/1 var(--display);letter-spacing:-.02em;text-align:center;min-height:68px;padding:8px;border-radius:22px;background:rgba(255,255,255,.6)}
-.wfoot{display:grid;grid-template-columns:1fr 1.3fr;gap:8px}
-.wfoot button{min-height:52px;font-size:17px}
-.wfoot input{border-radius:99px;padding-left:16px}
+.datechip{position:relative;display:inline-flex;align-items:center;gap:8px;justify-self:start;padding:6px 14px;min-height:38px;border-radius:99px;
+  background:var(--glass-2);border:1px solid var(--edge);color:var(--ink);font-size:15px;font-weight:500}
+.datechip svg{flex:none}
+.datechip input{position:absolute;inset:0;opacity:0;width:100%;height:100%;min-height:0;padding:0;border:0;cursor:pointer}
+.wrow{display:grid;grid-template-columns:64px 1fr 64px;gap:12px;align-items:center}
+.wrow button{width:64px;height:64px;min-height:0;padding:0;border-radius:50%;display:grid;place-items:center;
+  background:rgba(255,255,255,.55);color:var(--accent);border:1px solid var(--edge);
+  box-shadow:0 6px 16px rgba(22,48,31,.12), inset 0 1px 0 rgba(255,255,255,.9)}
+.wrow button svg{width:24px;height:24px}
+#wKg{font:300 44px/1 var(--display);letter-spacing:-.02em;text-align:center;min-height:72px;padding:8px;border-radius:24px;background:rgba(255,255,255,.6);border-color:var(--edge)}
+#wBtn{min-height:56px;font-size:17px;box-shadow:0 10px 22px rgba(31,90,52,.28)}
 /* замеры */
 .mform{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .mform .full{grid-column:1 / -1}
@@ -111,8 +119,49 @@ summary::-webkit-details-marker{display:none}
 summary::after{content:"";width:9px;height:9px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg) translateY(-3px);flex:none}
 details[open] > summary::after{transform:rotate(-135deg) translateY(-2px)}
 summary .note{font-size:13px;color:var(--muted);margin-left:auto}
+details.hist{border-top:1px solid var(--line);padding-top:10px}
+details.hist > summary{font-weight:500;font-size:15px;min-height:36px}
+details.hist[open] > summary{margin-bottom:6px}
 .btnrow{display:flex;flex-wrap:wrap;gap:8px}
 .btnrow button{flex:1 1 160px}
+/* глянцевое рифлёное стекло на полях и кнопках */
+input,textarea{background:var(--ribs-soft), rgba(255,255,255,.5);border-color:var(--edge);box-shadow:var(--shine)}
+#wKg{background:var(--gloss), var(--ribs-soft), rgba(255,255,255,.55)}
+.datechip,.wrow button,button.ghost{background:var(--gloss), var(--ribs), rgba(255,255,255,.42);border:1px solid var(--edge);box-shadow:0 6px 16px rgba(22,48,31,.12), var(--shine)}
+#wBtn,#mBtn{background:linear-gradient(165deg, rgba(255,255,255,.32) 0%, rgba(255,255,255,.06) 40%, rgba(255,255,255,0) 60%), var(--ribs-dark), var(--accent);box-shadow:0 10px 22px rgba(31,90,52,.28), inset 0 1px 0 rgba(255,255,255,.45)}
+/* цифры и даты — главное: темнее и плотнее */
+.tile .v{font-weight:600;color:var(--ink)}
+.tile .n{color:var(--ink);opacity:.8}
+td{color:var(--ink);font-size:16px}
+td:first-child{font-weight:500}
+td.num{font-weight:600}
+td.num .status{font-weight:500;color:var(--muted)}
+.datechip span{font-weight:600}
+#wKg{font-weight:400;color:var(--ink)}
+input{font-weight:500}
+svg text{fill:var(--ink);opacity:.8;font-weight:500}
+#mNote,#mCount,#wHint{color:var(--ink);font-weight:500}
+/* блоки без стекла: лёгкая прозрачная подложка, фото видно чётко */
+.hero,.card,.tile{background:rgba(255,255,255,.16);-webkit-backdrop-filter:none;backdrop-filter:none;border:1px solid rgba(255,255,255,.55);box-shadow:0 8px 24px rgba(40,10,25,.14)}
+.hero::before,.card::before,.tile::before{display:none}
+.status:empty{display:none}
+h1,h2,.tile .k,label,th,.legend,summary,.goal-edit{color:var(--ink);font-weight:500;text-shadow:0 0 2px #fff, 0 0 6px #fff, 0 0 12px rgba(255,255,255,.85)}
+h1{font-weight:400}
+.pill{box-shadow:0 0 0 999px rgba(255,255,255,0)}
+.pill.good,.pill.warn,.pill.bad,.pill.none{background-color:rgba(255,255,255,.8)}
+.tip{color:var(--ink);background:rgba(255,255,255,.62);border-radius:12px;padding:8px 10px}
+.legend{background:rgba(255,255,255,.62);border-radius:12px;padding:6px 10px}
+/* подсветка цифр и дат: светлые «плашки» */
+.tile .v{justify-self:start;background:rgba(255,255,255,.78);border-radius:12px;padding:4px 10px;margin:2px 0;box-shadow:0 2px 8px rgba(40,10,25,.10)}
+.tile .n{justify-self:start;background:rgba(255,255,255,.62);border-radius:8px;padding:2px 8px;opacity:1}
+#wRows tr td,#mRows tr td{background:rgba(255,255,255,.62)}
+#wRows tr td:first-child,#mRows tr td:first-child{border-radius:12px 0 0 12px;padding-left:10px}
+#wRows tr td:last-child,#mRows tr td:last-child{border-radius:0 12px 12px 0}
+#wTable,#mBox table{border-collapse:separate;border-spacing:0 6px}
+#wRows td,#mRows td{border-bottom:0}
+#wHint:not(:empty),#mNote,#mCount,summary .note{color:var(--ink);font-weight:500;background:rgba(255,255,255,.7);border-radius:99px;padding:2px 10px}
+.datechip{background:var(--gloss), rgba(255,255,255,.8)}
+#chart{background:rgba(255,255,255,.6);border-radius:16px}
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.hero,.card,.tile{background:rgba(255,255,255,.85)}}
 @media (max-width:760px){.tiles{grid-template-columns:1fr 1fr}.cols{grid-template-columns:1fr}}
 @media (max-width:360px){.tile .v{font-size:22px}#wKg{font-size:32px}h1{font-size:30px}}
@@ -124,22 +173,25 @@ summary .note{font-size:13px;color:var(--muted);margin-left:auto}
 <div class="wrap">
   <header class="hero">
     <h1>Трекер веса</h1>
-    <div class="status" id="status">Записи хранятся только в этом телефоне</div>
+    <div class="status" id="status"></div>
   </header>
 
   <div class="cols">
     <section class="card" aria-labelledby="hW">
-      <div class="head"><h2 id="hW">Вес</h2><span class="d" id="wHint">утром, до еды и воды</span></div>
+      <div class="head"><h2 id="hW">Вес</h2><span class="d" id="wHint"></span></div>
       <form id="fW" class="wform" novalidate>
-        <div class="wrow">
-          <button type="button" id="wMinus" aria-label="Минус 0,1 кг">−</button>
-          <input type="text" id="wKg" inputmode="decimal" autocomplete="off" placeholder="67,4" aria-label="Вес, кг">
-          <button type="button" id="wPlus" aria-label="Плюс 0,1 кг">+</button>
-        </div>
-        <div class="wfoot">
+        <label class="datechip" for="wDate">
+          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="12" rx="3" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M1.5 6.5h13M5 1v3M11 1v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+          <span id="wDateTxt">Сегодня</span>
+          <svg width="8" height="12" viewBox="0 0 8 12" aria-hidden="true"><path d="M2 1.5 6.5 6 2 10.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
           <input type="date" id="wDate" aria-label="Дата" required>
-          <button type="submit" id="wBtn">Записать</button>
+        </label>
+        <div class="wrow">
+          <button type="button" id="wMinus" aria-label="Минус 0,1 кг"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
+          <input type="text" id="wKg" inputmode="decimal" autocomplete="off" placeholder="67,4" aria-label="Вес, кг">
+          <button type="button" id="wPlus" aria-label="Плюс 0,1 кг"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5v14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
         </div>
+        <button type="submit" id="wBtn">Записать</button>
         <div class="msg" id="wMsg"></div>
       </form>
     </section>
@@ -152,15 +204,6 @@ summary .note{font-size:13px;color:var(--muted);margin-left:auto}
     </section>
   </div>
 
-  <section class="card" aria-labelledby="hC">
-    <div class="head">
-      <h2 id="hC">Динамика</h2>
-      <label class="goal-edit" for="goal">Цель, кг <input type="text" inputmode="decimal" id="goal" value="58" autocomplete="off"></label>
-    </div>
-    <svg id="chart" width="100%" height="240" role="img" aria-label="График веса"></svg>
-    <div class="legend"><span><i style="background:var(--avg)"></i>среднее за 7 дней</span><span><i style="background:var(--dot);height:8px;width:8px;border-radius:50%"></i>вес по дням</span><span><i style="background:var(--goal)"></i>цель</span></div>
-  </section>
-
   <div class="cols">
     <section class="card" aria-labelledby="hR">
       <h2 id="hR">Записи веса</h2>
@@ -169,8 +212,8 @@ summary .note{font-size:13px;color:var(--muted);margin-left:auto}
       <button class="ghost" type="button" id="wAll" hidden>Показать все</button>
     </section>
 
-    <details class="card" id="mBox">
-      <summary><h2>Замеры, см</h2><span class="note" id="mNote">раз в 2–4 недели</span></summary>
+    <section class="card" id="mBox" aria-labelledby="hM">
+      <div class="head"><h2 id="hM">Замеры, см</h2><span class="d" id="mNote">раз в 2–4 недели</span></div>
       <form id="fM" class="mform" novalidate>
         <label for="mWaist">Талия<input type="text" id="mWaist" inputmode="decimal" autocomplete="off"></label>
         <label for="mHips">Бёдра<input type="text" id="mHips" inputmode="decimal" autocomplete="off"></label>
@@ -180,9 +223,12 @@ summary .note{font-size:13px;color:var(--muted);margin-left:auto}
         <div class="msg full" id="mMsg"></div>
       </form>
       <p class="tip">Утром, сантиметром по голому телу: талия по самому узкому месту, бёдра по самому широкому.</p>
-      <div class="tablebox"><table><thead><tr><th>Дата</th><th class="num">Талия</th><th class="num">Бёдра</th><th class="num">Грудь</th><th></th></tr></thead><tbody id="mRows"></tbody></table></div>
-      <div class="empty" id="mEmpty">Пока нет замеров.</div>
-    </details>
+      <details class="hist">
+        <summary><span>История замеров</span><span class="note" id="mCount"></span></summary>
+        <div class="tablebox"><table><thead><tr><th>Дата</th><th class="num">Талия</th><th class="num">Бёдра</th><th class="num">Грудь</th><th></th></tr></thead><tbody id="mRows"></tbody></table></div>
+        <div class="empty" id="mEmpty">Пока нет замеров.</div>
+      </details>
+    </section>
   </div>
 
   <details class="card">
@@ -192,6 +238,15 @@ summary .note{font-size:13px;color:var(--muted);margin-left:auto}
     <div class="msg" id="copyMsg"></div>
     <label for="backup">Поле для копии<textarea id="backup" rows="3"></textarea></label>
   </details>
+
+  <section class="card" aria-labelledby="hC">
+    <div class="head">
+      <h2 id="hC">Динамика</h2>
+      <label class="goal-edit" for="goal">Цель, кг <input type="text" inputmode="decimal" id="goal" value="58" autocomplete="off"></label>
+    </div>
+    <svg id="chart" width="100%" height="240" role="img" aria-label="График веса"></svg>
+    <div class="legend"><span><i style="background:var(--avg)"></i>среднее за 7 дней</span><span><i style="background:var(--dot);height:8px;width:8px;border-radius:50%"></i>вес по дням</span><span><i style="background:var(--goal)"></i>цель</span></div>
+  </section>
 </div>
 
 <script>
@@ -299,6 +354,7 @@ summary .note{font-size:13px;color:var(--muted);margin-left:auto}
       mb.appendChild(tr);
     });
     $("mEmpty").style.display = measures.length ? "none" : "block";
+    $("mCount").textContent = measures.length ? measures.length + " шт." : "пусто";
     $("mNote").textContent = measures.length ? "последние " + ruDate(measures[measures.length-1].date) : "раз в 2–4 недели";
 
     drawChart();
@@ -363,7 +419,11 @@ summary .note{font-size:13px;color:var(--muted);margin-left:auto}
   function lastKg(){ return weights.length ? weights[weights.length-1].kg : null; }
   function updateHint(){
     const d = $("wDate").value, had = store.weights[d];
-    $("wHint").textContent = typeof had === "number" ? "на " + ruDate(d) + " уже " + fmt(had) + " кг, заменится" : "утром, до еды и воды";
+    $("wHint").textContent = typeof had === "number" ? "на " + ruDate(d) + " уже " + fmt(had) + " кг, заменится" : "";
+    if (isDate(d)){
+      const diff = dayNum(today) - dayNum(d), long = parseIso(d).toLocaleDateString("ru-RU", {day:"numeric", month:"long"});
+      $("wDateTxt").textContent = diff === 0 ? "Сегодня, " + long : diff === 1 ? "Вчера, " + long : long;
+    }
     const lk = lastKg(); $("wKg").placeholder = lk != null ? fmt(lk) : "67,4";
   }
   function step(delta){
@@ -416,7 +476,6 @@ summary .note{font-size:13px;color:var(--muted);margin-left:auto}
   });
 
   if (!canSave) setStatus("Браузер не даёт сохранять записи. Откройте трекер не в режиме инкогнито.", true);
-  else setStatus("Записи хранятся только в этом телефоне");
   try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch(e){}
   render();
 
