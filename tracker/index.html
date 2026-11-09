@@ -376,7 +376,7 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
       $("tLost").textContent = sign(-lost) + " кг";
       $("tLostN").textContent = "с " + ruDate(first.date) + ", было " + fmt(startAvg) + " кг";
       const left = last.kg - goal;
-      $("tLeft").textContent = left <= 0 ? "цель!" : fmt(left) + " кг";
+      $("tLeft").textContent = left <= 0 ? "цель!" : val(left) + " кг";
       if (left <= 0) $("tLeftN").textContent = "цель " + val(goal) + " кг достигнута";
       else if (pace != null && pace < -0.1){
         const weeks = left / -pace;
