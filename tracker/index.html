@@ -298,13 +298,16 @@ details.hist > summary span{white-space:nowrap}
   const $ = id => document.getElementById(id);
   const fmt = (x, d=2) => x == null || isNaN(x) ? "—" : x.toFixed(d).replace(".", ",");
   const sign = x => { const r = Math.round(x * 100) / 100; return (r > 0 ? "+" : r < 0 ? "−" : "") + fmt(Math.abs(r)); };
+  // Введённые вес, замеры и цель показываем как есть: без округления и лишних нулей. toFixed(10) убирает только шум дробной арифметики.
+  const val = x => x == null || isNaN(x) ? "—" : x.toFixed(10).replace(/\.?0+$/, "").replace(".", ",");
+  const signVal = x => { const r = +x.toFixed(10); return (r > 0 ? "+" : r < 0 ? "−" : "") + val(Math.abs(r)); };
   const pad = n => String(n).padStart(2, "0");
   const iso = d => d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate());
   const parseIso = s => { const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d); };
   const DAY = 86400000;
   const dayNum = s => Math.round(parseIso(s).getTime() / DAY);
   const ruDate = s => { const d = parseIso(s); return pad(d.getDate()) + "." + pad(d.getMonth()+1) + "." + String(d.getFullYear()).slice(2); };
-  const num = v => { if (v === "" || v == null) return null; const x = parseFloat(String(v).replace(",", ".")); return isNaN(x) ? null : Math.round(x*100)/100; };
+  const num = v => { if (v === "" || v == null) return null; const x = parseFloat(String(v).replace(",", ".")); return isNaN(x) ? null : x; };
   const isDate = s => typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s);
 
   // Записи хранятся только в этом браузере: {weights:{дата:кг}, measures:{дата:{waist,hips,chest}}, goal}
@@ -340,7 +343,7 @@ details.hist > summary span{white-space:nowrap}
     const last = weights[weights.length-1], first = weights[0];
     const cur = last ? avg7(last.day) : null;
     $("tAvg").textContent = cur == null ? "—" : fmt(cur) + " кг";
-    $("tAvgN").textContent = last ? "последний вес " + fmt(last.kg) + " кг, " + ruDate(last.date) : "нет записей";
+    $("tAvgN").textContent = last ? "последний вес " + val(last.kg) + " кг, " + ruDate(last.date) : "нет записей";
 
     const p = $("tPaceP"); let pace = null;
     if (last && first && last.day - first.day >= 7){
@@ -365,23 +368,23 @@ details.hist > summary span{white-space:nowrap}
       $("tLostN").textContent = "с " + ruDate(first.date) + ", было " + fmt(startAvg) + " кг";
       const left = cur - goal;
       $("tLeft").textContent = left <= 0 ? "цель!" : fmt(left) + " кг";
-      if (left <= 0) $("tLeftN").textContent = "цель " + fmt(goal) + " кг достигнута";
+      if (left <= 0) $("tLeftN").textContent = "цель " + val(goal) + " кг достигнута";
       else if (pace != null && pace < -0.1){
         const weeks = left / -pace;
         const d = new Date(Date.now() + weeks * 7 * DAY);
         $("tLeftN").textContent = "при этом темпе ≈ " + d.toLocaleDateString("ru-RU", {month:"long", year:"numeric"});
-      } else $("tLeftN").textContent = "цель " + fmt(goal) + " кг";
+      } else $("tLeftN").textContent = "цель " + val(goal) + " кг";
     } else {
-      $("tLost").textContent = "—"; $("tLostN").textContent = "—"; $("tLeft").textContent = "—"; $("tLeftN").textContent = "цель " + fmt(goal) + " кг";
+      $("tLost").textContent = "—"; $("tLostN").textContent = "—"; $("tLeft").textContent = "—"; $("tLeftN").textContent = "цель " + val(goal) + " кг";
     }
 
-    $("goalBtn").textContent = "цель " + fmt(goal) + " кг ✎";
-    if (document.activeElement !== $("goal")) $("goal").value = fmt(goal);
+    $("goalBtn").textContent = "цель " + val(goal) + " кг ✎";
+    if (document.activeElement !== $("goal")) $("goal").value = val(goal);
     const wb = $("wRows"); wb.innerHTML = "";
     weights.slice().reverse().forEach((e, i) => {
       const tr = document.createElement("tr");
       if (i >= 10) tr.className = "more";
-      tr.innerHTML = "<td>" + ruDate(e.date) + "</td><td class='num'>" + fmt(e.kg) + " кг</td><td class='num'></td>";
+      tr.innerHTML = "<td>" + ruDate(e.date) + "</td><td class='num'>" + val(e.kg) + " кг</td><td class='num'></td>";
       tr.lastChild.appendChild(delBtn("weights", e.date, "Вес"));
       wb.appendChild(tr);
     });
@@ -391,7 +394,7 @@ details.hist > summary span{white-space:nowrap}
 
     const mb = $("mRows"); mb.innerHTML = "";
     const m0 = measures[0];
-    const cell = (v, k, i) => { if (v == null) return "<td class='num'>—</td>"; const d = i > 0 && m0[k] != null ? " <span class='status'>(" + sign(v - m0[k]) + ")</span>" : ""; return "<td class='num'>" + fmt(v) + d + "</td>"; };
+    const cell = (v, k, i) => { if (v == null) return "<td class='num'>—</td>"; const d = i > 0 && m0[k] != null ? " <span class='status'>(" + signVal(v - m0[k]) + ")</span>" : ""; return "<td class='num'>" + val(v) + d + "</td>"; };
     measures.slice().reverse().forEach((e, ri) => {
       const i = measures.length - 1 - ri;
       const tr = document.createElement("tr");
@@ -402,7 +405,7 @@ details.hist > summary span{white-space:nowrap}
     $("mEmpty").style.display = measures.length ? "none" : "block";
     const ml = measures[measures.length-1];
     renderMeasures();
-    $("mCount").textContent = ml ? [["т", ml.waist], ["б", ml.hips], ["г", ml.chest]].filter(p => p[1] != null).map(p => p[0] + " " + fmt(p[1])).join(" · ") : "пусто";
+    $("mCount").textContent = ml ? [["т", ml.waist], ["б", ml.hips], ["г", ml.chest]].filter(p => p[1] != null).map(p => p[0] + " " + val(p[1])).join(" · ") : "пусто";
     $("mNote").textContent = measures.length ? "последние " + ruDate(measures[measures.length-1].date) : "";
 
     drawChart();
@@ -449,7 +452,7 @@ details.hist > summary span{white-space:nowrap}
       s += "<text x='" + x(d) + "' y='" + (H-8) + "' text-anchor='middle'>" + pad(dt.getDate()) + "." + pad(dt.getMonth()+1) + "</text>";
     }
     s += "<line x1='" + L + "' x2='" + (W-R) + "' y1='" + y(goal) + "' y2='" + y(goal) + "' stroke='var(--goal)' stroke-width='2' stroke-dasharray='6 5'/>";
-    s += "<text x='" + (W-R) + "' y='" + (y(goal)-6) + "' text-anchor='end' style='fill:var(--goal)'>цель " + fmt(goal) + "</text>";
+    s += "<text x='" + (W-R) + "' y='" + (y(goal)-6) + "' text-anchor='end' style='fill:var(--goal)'>цель " + val(goal) + "</text>";
     weights.forEach(e => { s += "<circle cx='" + x(e.day) + "' cy='" + y(e.kg) + "' r='3.5' fill='var(--dot)'/>"; });
     const pts = weights.map(e => [x(e.day), y(avg7(e.day))]);
     if (pts.length > 1){
@@ -478,7 +481,7 @@ details.hist > summary span{white-space:nowrap}
   }
   function step(delta){
     const base = num($("wKg").value) ?? lastKg() ?? 67;
-    $("wKg").value = fmt(Math.round((base + delta) * 100) / 100);
+    $("wKg").value = val(base + delta);
   }
   $("wMinus").addEventListener("click", () => step(-0.1));
   $("wPlus").addEventListener("click", () => step(0.1));
@@ -504,7 +507,7 @@ details.hist > summary span{white-space:nowrap}
   });
 
   $("goalBtn").addEventListener("click", () => {
-    $("goalBtn").hidden = true; $("goalForm").hidden = false; $("goal2").value = fmt(goal); $("goal2").focus(); $("goal2").select();
+    $("goalBtn").hidden = true; $("goalForm").hidden = false; $("goal2").value = val(goal); $("goal2").focus(); $("goal2").select();
   });
   $("goalForm").addEventListener("submit", ev => {
     ev.preventDefault();
@@ -540,8 +543,8 @@ details.hist > summary span{white-space:nowrap}
       const v = $(id), n = $(id + "n");
       if (!pts.length){ v.textContent = "—"; n.textContent = "нет замеров"; return; }
       const last = pts[pts.length-1], first = pts[0];
-      v.textContent = fmt(last[k]) + " см";
-      n.textContent = pts.length > 1 ? sign(last[k] - first[k]) + " см с " + ruDate(first.date) : "первый замер " + ruDate(first.date);
+      v.textContent = val(last[k]) + " см";
+      n.textContent = pts.length > 1 ? signVal(last[k] - first[k]) + " см с " + ruDate(first.date) : "первый замер " + ruDate(first.date);
     });
     drawMChart();
   }
@@ -553,7 +556,7 @@ details.hist > summary span{white-space:nowrap}
     if (!ms.length){ svg.innerHTML = "<text x='" + W/2 + "' y='" + H/2 + "' text-anchor='middle'>Здесь появится график после первых замеров</text>"; return; }
     const days = ms.map(e => dayNum(e.date)), d0 = Math.min(...days), d1 = Math.max(Math.max(...days), d0 + 14);
     const base = {}; MK.forEach(([k]) => { const f = ms.find(e => e[k] != null); if (f) base[k] = f[k]; });
-    const dv = (e, k) => Math.round((e[k] - base[k]) * 100) / 100;
+    const dv = (e, k) => e[k] - base[k];
     const vals = [0]; ms.forEach(e => MK.forEach(([k]) => { if (e[k] != null) vals.push(dv(e, k)); }));
     let lo = Math.floor(Math.min(...vals) - 1), hi = Math.ceil(Math.max(...vals) + 1);
     const x = d => L + (d - d0) / (d1 - d0) * (W - L - R), y = v => T + (hi - v) / (hi - lo) * (H - T - B);
