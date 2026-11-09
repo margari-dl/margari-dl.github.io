@@ -178,12 +178,13 @@ h1{font-weight:400}
 .pane[hidden]{display:none}
 .tiles.mtiles{grid-template-columns:repeat(3,1fr);gap:8px}
 .mtiles .tile{padding:12px}
-.mtiles .v{font-size:20px}
+.mtiles .v{font-size:17px;padding:4px 7px}
 .goalchip{justify-self:start;margin-top:4px;min-height:34px;padding:4px 12px;font-size:14px;font-weight:600;border-radius:99px;background:rgba(255,255,255,.8);color:var(--accent);border:1px solid rgba(255,255,255,.9)}
 .goalform{display:flex;gap:6px;margin-top:4px}
 .goalform input{width:84px;min-height:38px;padding:6px 10px;text-align:center;border-radius:99px;background:rgba(255,255,255,.85)}
 .goalform button{min-height:38px;padding:6px 14px;font-size:15px}
 .goalform[hidden],.goalchip[hidden]{display:none}
+details.hist > summary span{white-space:nowrap}
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.hero,.card,.tile{background:rgba(255,255,255,.85)}}
 @media (max-width:760px){.tiles{grid-template-columns:1fr 1fr}.cols{grid-template-columns:1fr}}
 @media (max-width:360px){.tile .v{font-size:22px}#wKg{font-size:32px}h1{font-size:30px}}
@@ -295,15 +296,15 @@ h1{font-weight:400}
 <script>
 (function(){
   const $ = id => document.getElementById(id);
-  const fmt = (x, d=1) => x == null || isNaN(x) ? "—" : x.toFixed(d).replace(".", ",");
-  const sign = x => (x > 0 ? "+" : x < 0 ? "−" : "") + fmt(Math.abs(x));
+  const fmt = (x, d=2) => x == null || isNaN(x) ? "—" : x.toFixed(d).replace(".", ",");
+  const sign = x => { const r = Math.round(x * 100) / 100; return (r > 0 ? "+" : r < 0 ? "−" : "") + fmt(Math.abs(r)); };
   const pad = n => String(n).padStart(2, "0");
   const iso = d => d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate());
   const parseIso = s => { const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d); };
   const DAY = 86400000;
   const dayNum = s => Math.round(parseIso(s).getTime() / DAY);
   const ruDate = s => { const d = parseIso(s); return pad(d.getDate()) + "." + pad(d.getMonth()+1) + "." + String(d.getFullYear()).slice(2); };
-  const num = v => { if (v === "" || v == null) return null; const x = parseFloat(String(v).replace(",", ".")); return isNaN(x) ? null : Math.round(x*10)/10; };
+  const num = v => { if (v === "" || v == null) return null; const x = parseFloat(String(v).replace(",", ".")); return isNaN(x) ? null : Math.round(x*100)/100; };
   const isDate = s => typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s);
 
   // Записи хранятся только в этом браузере: {weights:{дата:кг}, measures:{дата:{waist,hips,chest}}, goal}
@@ -401,7 +402,7 @@ h1{font-weight:400}
     $("mEmpty").style.display = measures.length ? "none" : "block";
     const ml = measures[measures.length-1];
     renderMeasures();
-    $("mCount").textContent = ml ? [["талия", ml.waist], ["бёдра", ml.hips], ["грудь", ml.chest]].filter(p => p[1] != null).map(p => p[0] + " " + fmt(p[1])).join(" · ") : "пусто";
+    $("mCount").textContent = ml ? [["т", ml.waist], ["б", ml.hips], ["г", ml.chest]].filter(p => p[1] != null).map(p => p[0] + " " + fmt(p[1])).join(" · ") : "пусто";
     $("mNote").textContent = measures.length ? "последние " + ruDate(measures[measures.length-1].date) : "";
 
     drawChart();
@@ -477,7 +478,7 @@ h1{font-weight:400}
   }
   function step(delta){
     const base = num($("wKg").value) ?? lastKg() ?? 67;
-    $("wKg").value = fmt(Math.round((base + delta) * 10) / 10);
+    $("wKg").value = fmt(Math.round((base + delta) * 100) / 100);
   }
   $("wMinus").addEventListener("click", () => step(-0.1));
   $("wPlus").addEventListener("click", () => step(0.1));
@@ -552,7 +553,7 @@ h1{font-weight:400}
     if (!ms.length){ svg.innerHTML = "<text x='" + W/2 + "' y='" + H/2 + "' text-anchor='middle'>Здесь появится график после первых замеров</text>"; return; }
     const days = ms.map(e => dayNum(e.date)), d0 = Math.min(...days), d1 = Math.max(Math.max(...days), d0 + 14);
     const base = {}; MK.forEach(([k]) => { const f = ms.find(e => e[k] != null); if (f) base[k] = f[k]; });
-    const dv = (e, k) => Math.round((e[k] - base[k]) * 10) / 10;
+    const dv = (e, k) => Math.round((e[k] - base[k]) * 100) / 100;
     const vals = [0]; ms.forEach(e => MK.forEach(([k]) => { if (e[k] != null) vals.push(dv(e, k)); }));
     let lo = Math.floor(Math.min(...vals) - 1), hi = Math.ceil(Math.max(...vals) + 1);
     const x = d => L + (d - d0) / (d1 - d0) * (W - L - R), y = v => T + (hi - v) / (hi - lo) * (H - T - B);
