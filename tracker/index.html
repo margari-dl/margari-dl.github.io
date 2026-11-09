@@ -371,10 +371,9 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
     }
 
     if (first && cur != null){
-      const startAvg = avg7(first.day);
-      const lost = startAvg - cur;
-      $("tLost").textContent = sign(-lost) + " кг";
-      $("tLostN").textContent = "с " + ruDate(first.date) + ", было " + fmt(startAvg) + " кг";
+      const lost = first.kg - last.kg;
+      $("tLost").textContent = signVal(-lost) + " кг";
+      $("tLostN").textContent = "с " + ruDate(first.date) + ", было " + val(first.kg) + " кг";
       const left = last.kg - goal;
       $("tLeft").textContent = left <= 0 ? "цель!" : val(left) + " кг";
       if (left <= 0) $("tLeftN").textContent = "цель " + val(goal) + " кг достигнута";
