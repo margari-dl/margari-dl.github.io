@@ -321,7 +321,7 @@ details.hist > summary span{white-space:nowrap}
   }
 
   let weights = [], measures = [], goal = store.goal;
-  const today = iso(new Date());
+  let today = iso(new Date());
   $("wDate").value = today; $("mDate").value = today; $("goal").value = goal;
 
   function load(){
@@ -483,6 +483,15 @@ details.hist > summary span{white-space:nowrap}
     const base = num($("wKg").value) ?? lastKg() ?? 67;
     $("wKg").value = val(base + delta);
   }
+  // Трекер может оставаться открытым в телефоне несколько дней: при возврате в него наступивший день становится «сегодня»
+  function syncToday(){
+    const t = iso(new Date());
+    if (t === today) return;
+    today = t; $("wDate").value = t; $("mDate").value = t; updateHint();
+  }
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) syncToday(); });
+  window.addEventListener("pageshow", syncToday);
+  window.addEventListener("focus", syncToday);
   $("wMinus").addEventListener("click", () => step(-0.1));
   $("wPlus").addEventListener("click", () => step(0.1));
   $("wDate").addEventListener("change", updateHint);
@@ -493,7 +502,7 @@ details.hist > summary span{white-space:nowrap}
     const date = $("wDate").value, kg = num($("wKg").value);
     if (!isDate(date) || kg == null || kg < 30 || kg > 200){ msg("wMsg", "Введите вес от 30 до 200 кг", true); return; }
     store.weights[date] = kg;
-    if (save()){ $("wKg").value = ""; $("wKg").blur(); msg("wMsg", ""); }
+    if (save()){ $("wKg").value = ""; $("wKg").blur(); msg("wMsg", ""); syncToday(); $("wDate").value = today; }
     render();
   });
 
@@ -502,7 +511,7 @@ details.hist > summary span{white-space:nowrap}
     const date = $("mDate").value, waist = num($("mWaist").value), hips = num($("mHips").value), chest = num($("mChest").value);
     if (!isDate(date) || (waist == null && hips == null && chest == null)){ msg("mMsg", "Заполните хотя бы один замер", true); return; }
     store.measures[date] = {waist, hips, chest};
-    if (save()){ ["mWaist","mHips","mChest"].forEach(id => $(id).value = ""); document.activeElement && document.activeElement.blur(); msg("mMsg", ""); }
+    if (save()){ ["mWaist","mHips","mChest"].forEach(id => $(id).value = ""); document.activeElement && document.activeElement.blur(); msg("mMsg", ""); syncToday(); $("mDate").value = today; }
     render();
   });
 
