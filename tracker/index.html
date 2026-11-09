@@ -185,6 +185,15 @@ h1{font-weight:400}
 .goalform button{min-height:38px;padding:6px 14px;font-size:15px}
 .goalform[hidden],.goalchip[hidden]{display:none}
 details.hist > summary span{white-space:nowrap}
+/* заметная кнопка раскрытия записей */
+summary.opener{min-height:44px}
+summary.opener::after{display:none}
+.openbtn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:99px;background:var(--accent);color:#fff;font-size:15px;font-weight:600;text-shadow:none;box-shadow:0 6px 14px rgba(31,90,52,.3)}
+.openbtn svg{transition:transform .2s}
+.openbtn .c{display:none}
+details[open] > summary .openbtn .o{display:none}
+details[open] > summary .openbtn .c{display:inline}
+details[open] > summary .openbtn svg{transform:rotate(180deg)}
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.hero,.card,.tile{background:rgba(255,255,255,.85)}}
 @media (max-width:760px){.tiles{grid-template-columns:1fr 1fr}.cols{grid-template-columns:1fr}}
 @media (max-width:360px){.tile .v{font-size:22px}#wKg{font-size:32px}h1{font-size:30px}}
@@ -226,21 +235,21 @@ details.hist > summary span{white-space:nowrap}
     </section>
 
     <section class="tiles" aria-label="Сводка">
-      <div class="tile"><span class="k">Среднее за 7 дней</span><span class="v" id="tAvg">—</span><span class="n" id="tAvgN">нет записей</span></div>
-      <div class="tile"><span class="k">Темп за неделю</span><span class="v" id="tPace">—</span><span class="pill none" id="tPaceP">нужно 8+ дней</span></div>
       <div class="tile"><span class="k">Сброшено</span><span class="v" id="tLost">—</span><span class="n" id="tLostN">—</span></div>
       <div class="tile"><span class="k">До цели</span><span class="v" id="tLeft">—</span><span class="n" id="tLeftN">—</span>
         <button type="button" class="goalchip" id="goalBtn">цель 58 кг ✎</button>
         <form class="goalform" id="goalForm" hidden novalidate><input type="text" inputmode="decimal" id="goal2" aria-label="Цель, кг" autocomplete="off"><button type="submit">OK</button></form></div>
+      <div class="tile"><span class="k">Среднее за 7 дней</span><span class="v" id="tAvg">—</span><span class="n" id="tAvgN">нет записей</span></div>
+      <div class="tile"><span class="k">Темп за неделю</span><span class="v" id="tPace">—</span><span class="pill none" id="tPaceP">нужно 8+ дней</span></div>
     </section>
   </div>
 
-      <section class="card" aria-labelledby="hR">
-      <h2 id="hR">Записи веса</h2>
+    <details class="card rec" id="wBox">
+      <summary class="opener"><h2>Записи веса</h2><span class="openbtn"><span class="o">Открыть</span><span class="c">Скрыть</span><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M3.5 6 8 10.5 12.5 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></summary>
       <div class="tablebox"><table id="wTable"><thead><tr><th>Дата</th><th class="num">Вес</th><th></th></tr></thead><tbody id="wRows"></tbody></table></div>
       <div class="empty" id="wEmpty">Пока нет записей. Начните с сегодняшнего веса.</div>
       <button class="ghost" type="button" id="wAll" hidden>Показать все</button>
-    </section>
+    </details>
 
   <section class="card" aria-labelledby="hC">
     <div class="head">
@@ -366,7 +375,7 @@ details.hist > summary span{white-space:nowrap}
       const lost = startAvg - cur;
       $("tLost").textContent = sign(-lost) + " кг";
       $("tLostN").textContent = "с " + ruDate(first.date) + ", было " + fmt(startAvg) + " кг";
-      const left = cur - goal;
+      const left = last.kg - goal;
       $("tLeft").textContent = left <= 0 ? "цель!" : fmt(left) + " кг";
       if (left <= 0) $("tLeftN").textContent = "цель " + val(goal) + " кг достигнута";
       else if (pace != null && pace < -0.1){
