@@ -197,6 +197,32 @@ summary.opener::after{display:none}
 details[open] > summary .openbtn .o{display:none}
 details[open] > summary .openbtn .c{display:inline}
 details[open] > summary .openbtn svg{transform:rotate(180deg)}
+/* отметки дня */
+.marks{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.marks .mk-t{width:100%;font-size:13px;color:var(--ink);font-weight:500;text-shadow:0 0 2px #fff,0 0 6px #fff}
+.marks .mk-h{font-weight:400;opacity:.85}
+.marks button{min-height:36px;padding:4px 12px;font-size:14px;font-weight:500;border-radius:99px;background:rgba(255,255,255,.7);color:var(--ink);border:1px solid rgba(255,255,255,.9);box-shadow:none}
+.marks button[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
+/* счётчик режима */
+.tile.wide{grid-column:1 / -1}
+.weeks{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;margin:4px 0 2px}
+.weeks i{height:8px;border-radius:4px;background:rgba(255,255,255,.55)}
+.weeks i.rest{background:rgba(255,255,255,.3);outline:1px dashed rgba(255,255,255,.85)}
+.weeks i.done{background:var(--accent)}
+.weeks i.rest.done{background:var(--goal);outline:0}
+.weeks i.now{background:#fff;box-shadow:0 0 0 2px var(--accent)}
+#planStart{width:170px}
+/* сводка по неделям */
+#wkTable{border-collapse:separate;border-spacing:0 6px}
+#wkRows td{background:rgba(255,255,255,.62);border-bottom:0;font-size:14px;padding:4px 3px}
+#wkTable th{padding:6px 3px}
+#wkRows .pill{font-size:12px;padding:2px 8px}
+#wkRows td:first-child{border-radius:12px 0 0 12px;padding-left:10px;white-space:nowrap}
+#wkRows td:last-child{border-radius:0 12px 12px 0;padding-right:8px}
+#wkRows .pill{white-space:nowrap}
+.tip.bad{box-shadow:inset 4px 0 0 var(--bad)}
+.tip.warn{box-shadow:inset 4px 0 0 var(--warn)}
+.tip.good{box-shadow:inset 4px 0 0 var(--good)}
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.hero,.card,.tile{background:rgba(255,255,255,.85)}}
 @media (max-width:760px){.tiles{grid-template-columns:1fr 1fr}.cols{grid-template-columns:1fr}}
 @media (max-width:360px){.tile .v{font-size:22px}#wKg{font-size:32px}h1{font-size:30px}}
@@ -235,6 +261,13 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
         <button type="submit" id="wBtn">Записать</button>
         <div class="msg" id="wMsg"></div>
       </form>
+      <div class="marks" id="marks" role="group" aria-label="Отметки дня">
+        <span class="mk-t">Что было в этот день <span class="mk-h">— сказывается на весе следующего утра</span></span>
+        <button type="button" data-m="sweet" aria-pressed="false">🍰 сладкое</button>
+        <button type="button" data-m="salt" aria-pressed="false">🧂 солёное</button>
+        <button type="button" data-m="train" aria-pressed="false">💪 тренировка</button>
+        <button type="button" data-m="cycle" aria-pressed="false">🌸 цикл</button>
+      </div>
     </section>
 
     <section class="tiles" aria-label="Сводка">
@@ -244,6 +277,11 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
         <form class="goalform" id="goalForm" hidden novalidate><input type="text" inputmode="decimal" id="goal2" aria-label="Цель, кг" autocomplete="off"><button type="submit">OK</button></form></div>
       <div class="tile"><span class="k">Среднее за 7 дней</span><span class="v" id="tAvg">—</span><span class="n" id="tAvgN">нет записей</span></div>
       <div class="tile"><span class="k">Темп за неделю</span><span class="v" id="tPace">—</span><span class="pill none" id="tPaceP">нужно 8+ дней</span></div>
+      <div class="tile wide" id="planTile"><span class="k">Жёсткий режим: 8 недель, потом 1–2 недели поддержания</span><span class="v" id="tPlan">—</span>
+        <div class="weeks" id="tPlanBar" aria-hidden="true"></div>
+        <span class="n" id="tPlanN">укажите дату начала режима</span>
+        <button type="button" class="goalchip" id="planBtn">начало режима ✎</button>
+        <form class="goalform" id="planForm" hidden novalidate><input type="date" id="planStart" aria-label="Дата начала режима"><button type="submit">OK</button></form></div>
     </section>
   </div>
 
@@ -261,7 +299,14 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
       <label class="goal-edit" for="goal">Цель, кг <input type="text" inputmode="decimal" id="goal" value="58" autocomplete="off"></label>
     </div>
     <svg id="chart" width="100%" height="240" role="img" aria-label="График веса"></svg>
-    <div class="legend"><span><i style="background:var(--avg)"></i>вес по дням</span><span><i style="background:var(--trend);height:2px"></i>среднее за 7 дней</span><span><i style="background:var(--goal)"></i>цель</span></div>
+    <div class="legend"><span><i style="background:var(--avg)"></i>вес по дням</span><span><i style="background:var(--trend);height:2px"></i>среднее за 7 дней</span><span><i style="background:var(--goal)"></i>цель</span><span id="legW" hidden><i style="background:rgba(180,97,46,.25);height:10px"></i>выходные</span></div>
+  </section>
+
+  <section class="card" aria-labelledby="hWk">
+    <div class="head"><h2 id="hWk">По неделям</h2><span class="d">среднее за 7 дней</span></div>
+    <p class="tip" id="wkAdvice"></p>
+    <div class="tablebox"><table id="wkTable"><thead><tr><th>Неделя</th><th class="num">Среднее</th><th class="num">Изменение</th><th>Темп</th></tr></thead><tbody id="wkRows"></tbody></table></div>
+    <div class="empty" id="wkEmpty">Сводка появится после первых записей.</div>
   </section>
   </div>
 
@@ -325,7 +370,9 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
 
   // Записи хранятся только в этом браузере: {weights:{дата:кг}, measures:{дата:{waist,hips,chest}}, goal}
   const KEY = "weight-tracker-v1";
-  let store = {weights:{}, measures:{}, goal:58}, canSave = true;
+  let store = {weights:{}, measures:{}, goal:58, notes:{}, plan:{}}, canSave = true;
+  // Отметки дня: {дата: ["sweet","salt","train","cycle"]}
+  const MARKS = {sweet:"🍰", salt:"🧂", train:"💪", cycle:"🌸"};
   try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && typeof s === "object") store = Object.assign(store, s); }
   catch(e){ canSave = false; }
   function save(){
@@ -352,6 +399,7 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
     weights.forEach(e => e.day = dayNum(e.date));
     weights.sort((a,b) => a.day - b.day);
     measures.sort((a,b) => a.date < b.date ? -1 : 1);
+    const wk = weekStats();
 
     const last = weights[weights.length-1], first = weights[0];
     const cur = last ? avg7(last.day) : null;
@@ -369,7 +417,7 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
       $("tPace").textContent = sign(pace) + " кг";
       const limit = cur * 0.01;
       if (pace > 0.05){ p.className = "pill warn"; p.textContent = "вес растёт"; }
-      else if (-pace > limit){ p.className = "pill bad"; p.textContent = "быстрее " + fmt(limit) + " кг: добавьте еды"; }
+      else if (-pace > limit){ p.className = "pill bad"; p.textContent = fastW(wk[1]) ? "2 недели подряд быстрее " + fmt(limit) + " кг: добавьте еды" : "быстрее " + fmt(limit) + " кг: смотрим ещё неделю"; }
       else if (-pace >= 0.15){ p.className = "pill good"; p.textContent = "безопасный темп"; }
       else { p.className = "pill none"; p.textContent = "почти на месте"; }
     }
@@ -396,7 +444,7 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
     weights.slice().reverse().forEach((e, i) => {
       const tr = document.createElement("tr");
       if (i >= 10) tr.className = "more";
-      tr.innerHTML = "<td>" + ruDate(e.date) + "</td><td class='num'>" + val(e.kg) + " кг</td><td class='num'></td>";
+      tr.innerHTML = "<td>" + ruDate(e.date) + " " + marksOf(e.date).map(k => MARKS[k]).join("") + "</td><td class='num'>" + val(e.kg) + " кг</td><td class='num'></td>";
       tr.lastChild.appendChild(delBtn("weights", e.date, "Вес"));
       wb.appendChild(tr);
     });
@@ -420,6 +468,8 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
     $("mCount").textContent = ml ? [["т", ml.waist], ["б", ml.hips], ["г", ml.chest]].filter(p => p[1] != null).map(p => p[0] + " " + val(p[1])).join(" · ") : "пусто";
     $("mNote").textContent = measures.length ? "последние " + ruDate(measures[measures.length-1].date) : "";
 
+    renderPlan();
+    renderWeeks(wk);
     drawChart();
   }
 
@@ -439,15 +489,19 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
   }
 
   function drawChart(){
-    const svg = $("chart"), W = Math.max(svg.clientWidth || 600, 300), H = 240;
+    // В режиме «Крупно» под графиком полоса для отметок дня
+    const near = zoom === "near", MS = near ? 32 : 0;
+    const svg = $("chart"), W = Math.max(svg.clientWidth || 600, 300), H = 240 + MS;
+    svg.setAttribute("height", H);
     svg.setAttribute("viewBox", "0 0 " + W + " " + H);
-    const L = 44, R = 12, T = 12, B = 28;
+    const L = 44, R = 12, T = 12, B = 28 + MS;
+    $("legW").hidden = !near;
     if (!weights.length){
       svg.innerHTML = "<text x='" + W/2 + "' y='" + H/2 + "' text-anchor='middle'>Здесь появится график после первых записей</text>";
       return;
     }
     // «Крупно»: последние 4 недели, шкала только по весу — так видны дневные колебания; «Весь путь»: всё время вместе с целью
-    const near = zoom === "near", lastDay = weights[weights.length-1].day;
+    const lastDay = weights[weights.length-1].day;
     const shown = near ? weights.filter(e => e.day > lastDay - 28) : weights;
     const d0 = shown[0].day, d1 = Math.max(lastDay, d0 + 6);
     let lo, hi, step;
@@ -465,6 +519,16 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
     const x = d => L + (d - d0) / (d1 - d0) * (W - L - R);
     const y = v => T + (hi - v) / (hi - lo) * (H - T - B);
     let s = "";
+    if (near){
+      // выходные — лёгкая подсветка: после них вес часто выше из-за воды
+      for (let d = d0; d <= d1; d++){
+        const wd = new Date(d * DAY).getUTCDay();
+        if (wd === 0 || wd === 6){
+          const a = Math.max(L, x(d - 0.5)), b = Math.min(W - R, x(d + 0.5));
+          s += "<rect x='" + a.toFixed(1) + "' y='" + T + "' width='" + (b - a).toFixed(1) + "' height='" + (H - B - T) + "' fill='rgba(180,97,46,.10)'/>";
+        }
+      }
+    }
     for (let i = 0; lo + i * step <= hi + 1e-9; i++){
       const v = +(lo + i * step).toFixed(2);
       s += "<line x1='" + L + "' x2='" + (W-R) + "' y1='" + y(v) + "' y2='" + y(v) + "' stroke='var(--line)'/>";
@@ -479,7 +543,7 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
       s += "<line x1='" + L + "' x2='" + (W-R) + "' y1='" + y(goal) + "' y2='" + y(goal) + "' stroke='var(--goal)' stroke-width='2' stroke-dasharray='6 5'/>";
       s += "<text x='" + (W-R) + "' y='" + (y(goal)-6) + "' text-anchor='end' style='fill:var(--goal)'>цель " + val(goal) + "</text>";
     } else if (near){
-      s += "<text x='" + (W-R) + "' y='" + (H-B-6) + "' text-anchor='end' style='fill:var(--goal)'>цель " + val(goal) + " кг " + (goal < lo ? "ниже ↓" : "выше ↑") + "</text>";
+      s += "<text x='" + (W-R) + "' y='" + (T+12) + "' text-anchor='end' style='fill:var(--goal)'>цель " + val(goal) + " кг " + (goal < lo ? "ниже ↓" : "выше ↑") + "</text>";
     }
     // Линия идёт через фактический вес каждого дня записи
     const pts = shown.map(e => [x(e.day), y(e.kg)]);
@@ -495,6 +559,17 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
     pts.forEach(p => { s += "<circle cx='" + p[0].toFixed(1) + "' cy='" + p[1].toFixed(1) + "' r='3.5' fill='var(--avg)' stroke='#fff' stroke-width='1.5'/>"; });
     const lp = pts[pts.length-1];
     s += "<circle cx='" + lp[0] + "' cy='" + lp[1] + "' r='5.5' fill='var(--avg)' stroke='#fff' stroke-width='2'/>";
+    if (near){
+      // отметки дня — значками под днём, к которому относятся
+      Object.keys(store.notes || {}).filter(isDate).forEach(k => {
+        const dn = dayNum(k); if (dn < d0 || dn > d1) return;
+        const m = marksOf(k);
+        m.forEach((key, j) => {
+          const cx = x(dn) + (m.length > 1 ? ((j & 1) ? 7 : -7) : 0), cy = H - B + 13 + (j >> 1) * 14;
+          s += "<text x='" + cx.toFixed(1) + "' y='" + cy + "' text-anchor='middle' style='font-size:12px;opacity:1'>" + MARKS[key] + "</text>";
+        });
+      });
+    }
     svg.innerHTML = s;
   }
   window.addEventListener("resize", () => drawChart());
@@ -510,6 +585,101 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
   document.querySelectorAll(".zoom button").forEach(b => b.addEventListener("click", () => setZoom(b.dataset.z)));
   document.querySelectorAll(".zoom button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.z === zoom)));
 
+  // ===== Отметки дня: сохраняются сразу по нажатию, для даты в поле «Вес» =====
+  function marksOf(d){ const m = store.notes && store.notes[d]; return Array.isArray(m) ? m.filter(k => MARKS[k]) : []; }
+  function syncMarks(){
+    const m = marksOf($("wDate").value);
+    document.querySelectorAll("#marks button").forEach(b => b.setAttribute("aria-pressed", String(m.includes(b.dataset.m))));
+  }
+  document.querySelectorAll("#marks button").forEach(b => b.addEventListener("click", () => {
+    const d = $("wDate").value; if (!isDate(d)) return;
+    const k = b.dataset.m; let m = marksOf(d);
+    m = m.includes(k) ? m.filter(x => x !== k) : m.concat(k);
+    if (!store.notes || typeof store.notes !== "object") store.notes = {};
+    if (m.length) store.notes[d] = m; else delete store.notes[d];
+    save(); render();
+  }));
+  // ===== Сводка по неделям: недели по 7 дней назад от последней записи (как плитка «Темп за неделю») =====
+  const dIso = d => new Date(d * DAY).toISOString().slice(0, 10);
+  const sd = s => s.slice(8, 10) + "." + s.slice(5, 7);
+  function weekStats(){
+    if (!weights.length) return [];
+    const last = weights[weights.length-1].day, first = weights[0].day, rows = [];
+    for (let end = last; end >= first && rows.length < 12; end -= 7){
+      const w = weights.filter(e => e.day <= end && e.day > end - 7);
+      rows.push(w.length ? {end, n:w.length, avg:w.reduce((a,e) => a + e.kg, 0) / w.length} : {end, n:0});
+    }
+    // изменение к предыдущей неделе; для вывода нужно хотя бы 3 записи в каждой из двух недель
+    rows.forEach((r, i) => { const p = rows[i+1]; if (r.n && p && p.n){ r.ch = r.avg - p.avg; r.prev = p.avg; r.ok = r.n >= 3 && p.n >= 3; } });
+    return rows;
+  }
+  function fastW(r){ return !!(r && r.ok && -r.ch > r.avg * 0.01); }
+  function stillW(r){ return !!(r && r.ok && r.ch > -0.15 && r.ch <= 0.05); }
+  function renderWeeks(wk){
+    const tb = $("wkRows"); tb.innerHTML = "";
+    wk.forEach(r => {
+      let cls = "none", t;
+      if (!r.n) t = "нет записей";
+      else if (r.ch == null) t = "начало";
+      else if (!r.ok) t = "мало данных";
+      else if (r.ch > 0.05){ cls = "warn"; t = "рост"; }
+      else if (fastW(r)){ cls = "bad"; t = "быстро"; }
+      else if (-r.ch >= 0.15){ cls = "good"; t = "норма"; }
+      else t = "на месте";
+      const pct = r.ch != null ? r.ch / r.prev * 100 : null;
+      const tr = document.createElement("tr");
+      const a0 = dIso(r.end - 6), a1 = dIso(r.end);
+      tr.innerHTML = "<td>" + (a0.slice(5, 7) === a1.slice(5, 7) ? a0.slice(8, 10) : sd(a0)) + "–" + sd(a1) + "</td>"
+        + "<td class='num'>" + (r.n ? fmt(r.avg) : "—") + "</td>"
+        + "<td class='num'>" + (r.ch != null ? sign(r.ch) + "<br><span class='status'>" + (pct < 0 ? "−" : pct > 0 ? "+" : "") + fmt(Math.abs(pct), 1) + " %</span>" : "—") + "</td>"
+        + "<td><span class='pill " + cls + "'>" + t + "</span></td>";
+      tb.appendChild(tr);
+    });
+    $("wkEmpty").style.display = wk.length ? "none" : "block";
+    $("wkTable").style.display = wk.length ? "" : "none";
+    // Правило плана: две недели подряд быстрее 1 % веса — добавить еды; одна — наблюдать
+    const a = $("wkAdvice"), w0 = wk[0], w1 = wk[1];
+    let cls = "", t;
+    if (!w0 || !w0.ok) t = "Для вывода нужны две недели записей, хотя бы по 3 взвешивания в каждой.";
+    else if (fastW(w0) && fastW(w1)){ cls = "bad"; t = "Две недели подряд среднее снижается быстрее 1 % веса. По плану: добавьте 100–150 ккал в день и посмотрите ещё неделю."; }
+    else if (fastW(w0)){ cls = "warn"; t = "Эта неделя быстрее 1 % веса. Одна такая неделя — ещё не повод менять план: смотрим следующую. Повторится — добавьте 100–150 ккал в день."; }
+    else if (stillW(w0) && stillW(w1)){ cls = "warn"; t = "Две недели среднее почти на месте. Если норму соблюдали — добавьте активность (шаги, кардио), калорийность ниже согласованной не опускайте. Загляните в замеры: они могут меняться, пока вес стоит."; }
+    else if (w0.ch > 0.05){ cls = "warn"; t = "Среднее за неделю выросло. Посмотрите отметки дня: часто это вода после солёного, сладкого, тренировки или перед циклом."; }
+    else { cls = "good"; t = "Темп в норме: среднее снижается не быстрее 1 % веса в неделю."; }
+    a.className = "tip" + (cls ? " " + cls : ""); a.textContent = t;
+  }
+  // ===== Счётчик жёсткого режима: 8 недель, затем 1–2 недели поддержания =====
+  function addDays(s, n){ const d = parseIso(s); d.setDate(d.getDate() + n); return iso(d); }
+  function renderPlan(){
+    const st = store.plan && store.plan.start, bar = $("tPlanBar");
+    $("planBtn").textContent = isDate(st) ? "начало " + ruDate(st) + " ✎" : "указать начало ✎";
+    if (!isDate(st)){ $("tPlan").textContent = "—"; $("tPlanN").textContent = "укажите дату начала режима"; bar.innerHTML = ""; return; }
+    const days = dayNum(today) - dayNum(st), wkN = Math.floor(days / 7) + 1;
+    let v, n;
+    if (days < 0){ v = "скоро"; n = "режим начнётся " + ruDate(st); }
+    else if (wkN <= 8){
+      v = "неделя " + wkN + " из 8";
+      n = "режим до " + ruDate(addDays(st, 55)) + (wkN >= 7 ? " · дальше 1–2 недели поддержания" : "");
+    }
+    else if (wkN <= 10){ v = "поддержание"; n = "неделя " + (wkN - 8) + " из 1–2 · потом новый цикл: обновите дату начала"; }
+    else { v = "цикл завершён"; n = "начинаете новый цикл? Обновите дату начала"; }
+    $("tPlan").textContent = v; $("tPlanN").textContent = n;
+    let h = "";
+    for (let i = 1; i <= 10; i++) h += "<i class='" + (i > 8 ? "rest" : "") + (days >= 0 && i < wkN ? " done" : days >= 0 && i === wkN ? " now" : "") + "'></i>";
+    bar.innerHTML = h;
+  }
+  $("planBtn").addEventListener("click", () => {
+    const st = store.plan && store.plan.start;
+    $("planStart").value = isDate(st) ? st : (weights[0] ? weights[0].date : today);
+    $("planBtn").hidden = true; $("planForm").hidden = false; $("planStart").focus();
+  });
+  $("planForm").addEventListener("submit", ev => {
+    ev.preventDefault();
+    const d = $("planStart").value;
+    if (isDate(d)){ store.plan = {start:d}; save(); }
+    $("planForm").hidden = true; $("planBtn").hidden = false; render();
+  });
+
   function setStatus(t, err){ const s = $("status"); s.textContent = t; s.className = "status" + (err ? " err" : ""); }
   function msg(id, t, err){ const m = $(id); m.textContent = t; m.className = "msg" + (err ? " err" : " ok"); }
 
@@ -517,6 +687,7 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
   function lastKg(){ return weights.length ? weights[weights.length-1].kg : null; }
   function updateHint(){
     const d = $("wDate").value, had = store.weights[d];
+    syncMarks();
     if (isDate(d)){
       const diff = dayNum(today) - dayNum(d), long = parseIso(d).toLocaleDateString("ru-RU", {day:"numeric", month:"long"});
       $("wDateTxt").textContent = diff === 0 ? "Сегодня, " + long : diff === 1 ? "Вчера, " + long : long;
