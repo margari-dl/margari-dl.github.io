@@ -203,9 +203,17 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
 .marks .mk-h{font-weight:400;opacity:.85}
 .marks button{min-height:36px;padding:4px 12px;font-size:14px;font-weight:500;border-radius:99px;background:rgba(255,255,255,.7);color:var(--ink);border:1px solid rgba(255,255,255,.9);box-shadow:none}
 .marks button[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
-.mkday{display:inline-flex;gap:2px;padding:2px;border-radius:99px;background:rgba(255,255,255,.75);vertical-align:middle;margin:0 2px;text-shadow:none}
-.marks .mkday button{min-height:28px;padding:2px 10px;font-size:13px;border:0;background:transparent}
-.marks .mkday button[aria-pressed="true"]{background:var(--accent);color:#fff}
+#wKg.bad{border-color:var(--bad);box-shadow:0 0 0 2px rgba(168,48,44,.35)}
+.cyrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;width:100%}
+.cyrow .datechip{min-height:36px}
+.marks #cyBtn{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600}
+.marks #cyBtn:disabled{background:rgba(255,255,255,.7);color:var(--ink);border-color:rgba(255,255,255,.9);opacity:1}
+.cylist{display:flex;flex-wrap:wrap;gap:6px;width:100%}
+.cylist:empty{display:none}
+.marks .cylist button{min-height:32px;padding:2px 10px;font-size:13px}
+/* «Сброшено» — главная плитка, выделена цветом */
+.tile.hl{background:linear-gradient(160deg, rgba(31,90,52,.94), rgba(31,90,52,.8));border-color:rgba(255,255,255,.7);box-shadow:0 10px 26px rgba(31,90,52,.38)}
+.tile.hl .k{color:#fff;text-shadow:none;font-weight:600}
 .marks .mk-t:not(:first-child){margin-top:6px}
 /* счётчик режима */
 .tile.wide{grid-column:1 / -1}
@@ -266,17 +274,25 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
         <div class="msg" id="wMsg"></div>
       </form>
       <div class="marks" id="marks" role="group" aria-label="Отметки дня">
-        <span class="mk-t">Что было <span class="mkday"><button type="button" data-o="1" aria-pressed="true">вчера</button><button type="button" data-o="0" aria-pressed="false">сегодня</button></span> <span class="mk-h" id="mkDate"></span></span>
+        <span class="mk-t">Что было вчера <span class="mk-h" id="mkDate"></span></span>
         <button type="button" data-m="sweet" aria-pressed="false">🍰 сладкое</button>
         <button type="button" data-m="salt" aria-pressed="false">🧂 солёное</button>
         <button type="button" data-m="train" aria-pressed="false">💪 тренировка</button>
-        <span class="mk-t">Цикл <span class="mk-h" id="cyInfo"></span></span>
-        <button type="button" id="cyBtn" aria-pressed="false">🌸 начались месячные</button>
+        <span class="mk-t">🌸 Начало месячных <span class="mk-h" id="cyInfo"></span></span>
+        <div class="cyrow">
+          <label class="datechip" for="cyDate">
+            <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="12" rx="3" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M1.5 6.5h13M5 1v3M11 1v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+            <span id="cyDateTxt">Сегодня</span>
+            <input type="date" id="cyDate" aria-label="Первый день месячных">
+          </label>
+          <button type="button" id="cyBtn">Отметить</button>
+        </div>
+        <div class="cylist" id="cyList"></div>
       </div>
     </section>
 
     <section class="tiles" aria-label="Сводка">
-      <div class="tile"><span class="k">Сброшено</span><span class="v" id="tLost">—</span><span class="n" id="tLostN">—</span></div>
+      <div class="tile hl"><span class="k">Сброшено</span><span class="v" id="tLost">—</span><span class="n" id="tLostN">—</span></div>
       <div class="tile"><span class="k">До цели</span><span class="v" id="tLeft">—</span><span class="n" id="tLeftN">—</span>
         <button type="button" class="goalchip" id="goalBtn">цель 58 кг ✎</button>
         <form class="goalform" id="goalForm" hidden novalidate><input type="text" inputmode="decimal" id="goal2" aria-label="Цель, кг" autocomplete="off"><button type="submit">OK</button></form></div>
@@ -389,6 +405,7 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
   let weights = [], measures = [], goal = store.goal;
   let today = iso(new Date());
   $("wDate").value = today; $("mDate").value = today; $("goal").value = goal;
+  $("cyDate").value = today; $("cyDate").max = today;
 
   function load(){
     weights = Object.keys(store.weights).filter(isDate).map(d => ({date:d, kg:store.weights[d]})).filter(e => typeof e.kg === "number");
@@ -600,21 +617,34 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
   document.querySelectorAll(".zoom button").forEach(b => b.addEventListener("click", () => setZoom(b.dataset.z)));
   document.querySelectorAll(".zoom button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.z === zoom)));
 
-  // ===== Отметки дня: сохраняются сразу по нажатию. По умолчанию — за вчера (взвешивание утром показывает вчерашний день) =====
-  let markOff = 1;
-  function markDate(){ const d = $("wDate").value; return isDate(d) ? addDays(d, -markOff) : null; }
+  // ===== Отметки дня: сохраняются сразу по нажатию, всегда за вчера (взвешивание утром показывает вчерашний день) =====
+  function markDate(){ return addDays(today, -1); }
   function marksOf(d){ const m = store.notes && store.notes[d]; return Array.isArray(m) ? m.filter(k => MARKS[k]) : []; }
+  function longDate(d){ const diff = dayNum(today) - dayNum(d), l = parseIso(d).toLocaleDateString("ru-RU", {day:"numeric", month:"long"}); return diff === 0 ? "Сегодня, " + l : diff === 1 ? "Вчера, " + l : l; }
   function syncMarks(){
-    const md = markDate(), m = md ? marksOf(md) : [];
+    const md = markDate(), m = marksOf(md);
     document.querySelectorAll("#marks button[data-m]").forEach(b => b.setAttribute("aria-pressed", String(m.includes(b.dataset.m))));
-    document.querySelectorAll(".mkday button").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.o === markOff)));
-    $("mkDate").textContent = md ? ruDate(md) + " — сказывается на весе следующего утра" : "";
-    const d = $("wDate").value, on = cycleStarts().includes(d);
-    $("cyBtn").setAttribute("aria-pressed", String(on));
-    $("cyBtn").textContent = on ? "🌸 месячные с " + ruDate(d) + " ✓" : "🌸 начались месячные";
-    $("cyInfo").textContent = cycleInfo(d);
+    $("mkDate").textContent = ruDate(md);
+    // начало месячных: дата из календаря, по умолчанию сегодня
+    const cd = $("cyDate").value, cs = cycleStarts(), on = isDate(cd) && cs.includes(cd);
+    if (isDate(cd)) $("cyDateTxt").textContent = longDate(cd);
+    $("cyBtn").disabled = on; $("cyBtn").textContent = on ? "Отмечено ✓" : "Отметить";
+    $("cyInfo").textContent = cycleInfo(today);
+    const box = $("cyList"); box.innerHTML = "";
+    cs.slice(-3).reverse().forEach(s => {
+      const b = document.createElement("button"); b.type = "button";
+      b.textContent = "🌸 " + ruDate(s) + " ✕"; b.setAttribute("aria-label", "Удалить начало цикла " + ruDate(s));
+      b.addEventListener("click", () => {
+        store.cycles = cycleStarts().filter(x => x !== s); save(); render();
+        const t = $("toast"); $("toastTxt").textContent = "Начало цикла " + ruDate(s) + " удалено";
+        t.hidden = false; clearTimeout(undoTimer);
+        $("undo").onclick = () => { store.cycles = cycleStarts().concat(s).sort(); save(); render(); t.hidden = true; clearTimeout(undoTimer); };
+        undoTimer = setTimeout(() => { t.hidden = true; }, 5000);
+      });
+      box.appendChild(b);
+    });
   }
-  document.querySelectorAll(".mkday button").forEach(b => b.addEventListener("click", () => { markOff = +b.dataset.o; syncMarks(); }));
+  $("cyDate").addEventListener("change", syncMarks);
   document.querySelectorAll("#marks button[data-m]").forEach(b => b.addEventListener("click", () => {
     const d = markDate(); if (!isDate(d)) return;
     const k = b.dataset.m; let m = marksOf(d);
@@ -650,10 +680,10 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
     return "— " + p.join(" · ");
   }
   $("cyBtn").addEventListener("click", () => {
-    const d = $("wDate").value; if (!isDate(d)) return;
-    let cs = cycleStarts();
-    cs = cs.includes(d) ? cs.filter(x => x !== d) : cs.concat(d).sort();
-    store.cycles = cs; save(); render();
+    const d = $("cyDate").value; if (!isDate(d) || d > today) return;
+    const cs = cycleStarts(); if (cs.includes(d)) return;
+    store.cycles = cs.concat(d).sort(); save();
+    $("cyDate").value = today; render();
   });
 
   // ===== Сводка по неделям: недели по 7 дней назад от последней записи (как плитка «Темп за неделю») =====
@@ -761,12 +791,13 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
   function syncToday(){
     const t = iso(new Date());
     if (t === today) return;
-    today = t; $("wDate").value = t; $("mDate").value = t; updateHint();
+    today = t; $("wDate").value = t; $("mDate").value = t; $("cyDate").value = t; $("cyDate").max = t; updateHint();
   }
   document.addEventListener("visibilitychange", () => { if (!document.hidden) syncToday(); });
   window.addEventListener("pageshow", syncToday);
   window.addEventListener("focus", syncToday);
-  $("wMinus").addEventListener("click", () => step(-0.1));
+  $("wKg").addEventListener("input", () => $("wKg").classList.remove("bad"));
+  $("wMinus").addEventListener("click", () => { step(-0.1); $("wKg").classList.remove("bad"); });
   $("wPlus").addEventListener("click", () => step(0.1));
   $("wDate").addEventListener("change", updateHint);
   $("wAll").addEventListener("click", () => { $("wTable").classList.add("all"); $("wAll").hidden = true; });
@@ -774,7 +805,9 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
   $("fW").addEventListener("submit", ev => {
     ev.preventDefault();
     const date = $("wDate").value, kg = num($("wKg").value);
-    if (!isDate(date) || kg == null || kg < 30 || kg > 200){ msg("wMsg", "Введите вес от 30 до 200 кг", true); return; }
+    // Без текста ошибки: поле веса просто подсвечивается, если вес не похож на настоящий
+    if (!isDate(date) || kg == null || kg < 30 || kg > 200){ $("wKg").classList.add("bad"); $("wKg").focus(); return; }
+    $("wKg").classList.remove("bad");
     store.weights[date] = kg;
     if (save()){ $("wKg").value = ""; $("wKg").blur(); msg("wMsg", ""); syncToday(); $("wDate").value = today; }
     render();
