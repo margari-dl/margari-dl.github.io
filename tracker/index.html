@@ -81,11 +81,6 @@ button:disabled{opacity:.5;cursor:default}
   background:var(--glass-2);border:1px solid var(--edge);color:var(--ink);font-size:15px;font-weight:500}
 .datechip svg{flex:none}
 .datechip input{position:absolute;inset:0;opacity:0;width:100%;height:100%;min-height:0;padding:0;border:0;cursor:pointer}
-.wrow{display:grid;grid-template-columns:64px 1fr 64px;gap:12px;align-items:center}
-.wrow button{width:64px;height:64px;min-height:0;padding:0;border-radius:50%;display:grid;place-items:center;
-  background:rgba(255,255,255,.55);color:var(--accent);border:1px solid var(--edge);
-  box-shadow:0 6px 16px rgba(22,48,31,.12), inset 0 1px 0 rgba(255,255,255,.9)}
-.wrow button svg{width:24px;height:24px}
 #wKg{font:300 44px/1 var(--display);letter-spacing:-.02em;text-align:center;min-height:72px;padding:8px;border-radius:24px;background:rgba(255,255,255,.6);border-color:var(--edge)}
 #wBtn{min-height:56px;font-size:17px;box-shadow:0 10px 22px rgba(31,90,52,.28)}
 /* замеры */
@@ -131,7 +126,7 @@ details.hist[open] > summary{margin-bottom:6px}
 /* глянцевое рифлёное стекло на полях и кнопках */
 input,textarea{background:var(--ribs-soft), rgba(255,255,255,.5);border-color:var(--edge);box-shadow:var(--shine)}
 #wKg{background:var(--gloss), var(--ribs-soft), rgba(255,255,255,.55)}
-.datechip,.wrow button,button.ghost{background:var(--gloss), var(--ribs), rgba(255,255,255,.42);border:1px solid var(--edge);box-shadow:0 6px 16px rgba(22,48,31,.12), var(--shine)}
+.datechip,button.ghost{background:var(--gloss), var(--ribs), rgba(255,255,255,.42);border:1px solid var(--edge);box-shadow:0 6px 16px rgba(22,48,31,.12), var(--shine)}
 #wBtn,#mBtn{background:linear-gradient(165deg, rgba(255,255,255,.32) 0%, rgba(255,255,255,.06) 40%, rgba(255,255,255,0) 60%), var(--ribs-dark), var(--accent);box-shadow:0 10px 22px rgba(31,90,52,.28), inset 0 1px 0 rgba(255,255,255,.45)}
 /* цифры и даты — главное: темнее и плотнее */
 .tile .v{font-weight:600;color:var(--ink)}
@@ -214,8 +209,30 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
 .cyhint{font-size:14px;line-height:1.4;font-weight:500;padding:6px 10px;border-radius:10px;background:var(--good-bg);color:var(--good)}
 /* «Сброшено» — главная плитка: стекло как у всех, белая рамка с ореолом и зелёная капсула под цифрой */
 .tile.hl{border:2px solid #fff;box-shadow:0 0 0 4px rgba(255,255,255,.28), 0 0 22px rgba(255,255,255,.65)}
-.tile.hl .v{background:var(--accent);color:#fff;box-shadow:0 4px 12px rgba(31,90,52,.35)}
+.tile.hl .v{background:rgba(217,96,138,.5);color:#fff;box-shadow:0 4px 12px rgba(217,96,138,.25)}
 .marks .mk-t:not(:first-child){margin-top:6px}
+/* «Темп за неделю»: слишком быстро — цифра в такой же розовой капсуле, как «Сброшено» */
+.tile .v.bad{background:rgba(217,96,138,.5);color:#fff;box-shadow:0 4px 12px rgba(217,96,138,.25)}
+/* «Что было вчера» — раскрывающийся список отметок; в закрытом виде видны выбранные значки */
+.mkbox{width:100%;border-radius:18px;background:rgba(255,255,255,.62);border:1px solid rgba(255,255,255,.9)}
+.mkbox > summary{min-height:44px;padding:6px 14px;gap:10px;justify-content:flex-start}
+.mkbox > summary::after{display:none}
+.mk-s{font-size:15px;font-weight:600;color:var(--ink)}
+.mk-sel{font-size:15px;letter-spacing:2px;color:var(--muted);font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mk-chev{margin-left:auto;width:9px;height:9px;border-right:2px solid var(--ink);border-bottom:2px solid var(--ink);transform:rotate(45deg) translateY(-3px);flex:none;transition:transform .2s}
+.mkbox[open] .mk-chev{transform:rotate(-135deg) translateY(-2px)}
+.mk-list{display:flex;flex-wrap:wrap;gap:6px;padding:2px 12px 12px}
+/* v25, вариант C: вес и «Записать» в одной капсуле */
+.wrow{display:flex;align-items:center;gap:6px;padding:4px 4px 4px 18px;border-radius:99px;background:var(--gloss), rgba(255,255,255,.62);border:1px solid var(--edge);box-shadow:var(--shine)}
+.wrow:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.wrow #wKg{flex:1 1 0;min-width:0;width:0;min-height:50px;padding:0;border:0;background:none;box-shadow:none;border-radius:0;text-align:left;font:400 30px/1 var(--display);outline:none}
+.wrow .kgu{font-size:16px;font-weight:500;color:var(--muted);margin-right:6px}
+.wrow #wBtn{min-height:48px;padding:0 22px;font-size:16px;box-shadow:0 6px 14px rgba(31,90,52,.25), inset 0 1px 0 rgba(255,255,255,.45)}
+.wrow:has(#wKg.bad){border-color:var(--bad);box-shadow:0 0 0 2px rgba(168,48,44,.35)}
+.wrow #wKg.bad{box-shadow:none}
+/* цикл: подпись и дата в одну строку */
+.cyc{padding:10px 12px;gap:6px}
+.marks .cyc .cyrow .mk-t{width:auto;margin:0}
 /* счётчик режима */
 .tile.wide{grid-column:1 / -1}
 .weeks{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;margin:4px 0 2px}
@@ -267,26 +284,34 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
           <input type="date" id="wDate" aria-label="Дата" required>
         </label>
         <div class="wrow">
-          <button type="button" id="wMinus" aria-label="Минус 0,1 кг"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
           <input type="text" id="wKg" inputmode="decimal" autocomplete="off" aria-label="Вес, кг">
-          <button type="button" id="wPlus" aria-label="Плюс 0,1 кг"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5v14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
+          <span class="kgu" aria-hidden="true">кг</span>
+          <button type="submit" id="wBtn">Записать</button>
         </div>
-        <button type="submit" id="wBtn">Записать</button>
         <div class="msg" id="wMsg"></div>
       </form>
       <div class="marks" id="marks" role="group" aria-label="Отметки дня">
-        <span class="mk-t">Что было вчера <span class="mk-h" id="mkDate"></span></span>
-        <button type="button" data-m="sweet" aria-pressed="false">🍰 сладкое</button>
-        <button type="button" data-m="salt" aria-pressed="false">🧂 солёное</button>
-        <button type="button" data-m="train" aria-pressed="false">💪 тренировка</button>
+        <details class="mkbox" id="mkBox">
+          <summary><span class="mk-s">Что было вчера</span><span class="mk-sel" id="mkSel"></span><span class="mk-chev" aria-hidden="true"></span></summary>
+          <div class="mk-list">
+            <button type="button" data-m="sleep" aria-pressed="false">😴 мало сна</button>
+            <button type="button" data-m="stress" aria-pressed="false">😣 стресс</button>
+            <button type="button" data-m="surplus" aria-pressed="false">🍽 профицит калорий</button>
+            <button type="button" data-m="dayoff" aria-pressed="false">🛋 выходной</button>
+            <button type="button" data-m="late" aria-pressed="false">🌙 поздний ужин</button>
+            <button type="button" data-m="train" aria-pressed="false">💪 тренировка</button>
+            <button type="button" data-m="sweet" aria-pressed="false">🍰 торт / пирожное</button>
+            <button type="button" data-m="salt" aria-pressed="false">🧂 солёное</button>
+          </div>
+        </details>
         <div class="cyc" role="group" aria-label="Цикл">
-          <span class="mk-t">🌸 Начало месячных</span>
           <div class="cyrow">
+            <span class="mk-t">🌸 Начало цикла</span>
             <label class="datechip" for="cyDate">
               <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="12" rx="3" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M1.5 6.5h13M5 1v3M11 1v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
               <span id="cyDateTxt">Выбрать дату</span>
               <span class="cyday" id="cyDay"></span>
-              <input type="date" id="cyDate" aria-label="Первый день месячных">
+              <input type="date" id="cyDate" aria-label="Первый день цикла">
             </label>
           </div>
           <div class="cyhint" id="cyHint"></div>
@@ -299,7 +324,7 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
       <div class="tile"><span class="k">До цели</span><span class="v" id="tLeft">—</span><span class="n" id="tLeftN">—</span>
         <button type="button" class="goalchip" id="goalBtn">цель 58 кг ✎</button>
         <form class="goalform" id="goalForm" hidden novalidate><input type="text" inputmode="decimal" id="goal2" aria-label="Цель, кг" autocomplete="off"><button type="submit">OK</button></form></div>
-      <div class="tile"><span class="k">Среднее за 7 дней</span><span class="v" id="tAvg">—</span><span class="n" id="tAvgN">нет записей</span></div>
+      <div class="tile"><span class="k">Среднее за 7 дней</span><span class="v" id="tAvg">—</span></div>
       <div class="tile"><span class="k">Темп за неделю</span><span class="v" id="tPace">—</span><span class="pill none" id="tPaceP">нужно 8+ дней</span></div>
       <div class="tile wide" id="planTile"><span class="k">Жёсткий режим: 8 недель, потом 1–2 недели поддержания</span><span class="v" id="tPlan">—</span>
         <div class="weeks" id="tPlanBar" aria-hidden="true"></div>
@@ -396,8 +421,9 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
   const KEY = "weight-tracker-v1";
   let store = {weights:{}, measures:{}, goal:58, notes:{}, plan:{}, cycles:[]}, canSave = true;
   // cycles: первые дни месячных ["ГГГГ-ММ-ДД", ...] — по ним считаются день цикла и дни перед циклом
-  // Отметки дня: {дата: ["sweet","salt","train","cycle"]}
-  const MARKS = {sweet:"🍰", salt:"🧂", train:"💪", cycle:"🌸"};
+  // Отметки дня: {дата: ["sleep","stress","surplus","dayoff","late","train","sweet","salt"]}; старые «cycle» тоже показываются
+  const MARKS = {sleep:"😴", stress:"😣", surplus:"🍽", dayoff:"🛋", late:"🌙", train:"💪", sweet:"🍰", salt:"🧂", cycle:"🌸"};
+  const plural = (n, a, b, c) => { const m = n % 10, h = n % 100; return m === 1 && h !== 11 ? a : m >= 2 && m <= 4 && (h < 12 || h > 14) ? b : c; };
   try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && typeof s === "object") store = Object.assign(store, s); }
   catch(e){ canSave = false; }
   function save(){
@@ -430,9 +456,9 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
     const last = weights[weights.length-1], first = weights[0];
     const cur = last ? avg7(last.day) : null;
     $("tAvg").textContent = cur == null ? "—" : fmt(cur) + " кг";
-    $("tAvgN").textContent = last ? "последний вес " + val(last.kg) + " кг, " + ruDate(last.date) : "нет записей";
 
     const p = $("tPaceP"); let pace = null;
+    $("tPace").classList.remove("bad");
     if (last && first && last.day - first.day >= 7){
       const prev = avg7(last.day - 7);
       if (prev != null) pace = cur - prev;
@@ -443,7 +469,8 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
       $("tPace").textContent = sign(pace) + " кг";
       const limit = cur * 0.01;
       if (pace > 0.05){ p.className = "pill warn"; p.textContent = "вес растёт"; }
-      else if (-pace > limit){ p.className = "pill bad"; p.textContent = fastW(wk[1]) ? "2 недели подряд быстрее " + fmt(limit) + " кг: добавьте еды" : "быстрее " + fmt(limit) + " кг: смотрим ещё неделю"; }
+      // быстрее 1 % веса в неделю — цифра в красной капсуле и одно слово; что делать — в «По неделям»
+      else if (-pace > limit){ p.className = "pill bad"; p.textContent = "быстро"; $("tPace").classList.add("bad"); }
       else if (-pace >= 0.15){ p.className = "pill good"; p.textContent = "безопасный темп"; }
       else { p.className = "pill none"; p.textContent = "почти на месте"; }
     }
@@ -451,7 +478,8 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
     if (first && cur != null){
       const lost = first.kg - last.kg;
       $("tLost").textContent = signVal(-lost) + " кг";
-      $("tLostN").textContent = "с " + ruDate(first.date) + ", было " + val(first.kg) + " кг";
+      const nd = last.day - first.day;
+      $("tLostN").textContent = (nd > 0 ? "за " + nd + " " + plural(nd, "день", "дня", "дней") + " · " : "") + "было " + val(first.kg) + " кг";
       const left = last.kg - goal;
       $("tLeft").textContent = left <= 0 ? "цель!" : val(left) + " кг";
       if (left <= 0) $("tLeftN").textContent = "цель " + val(goal) + " кг достигнута";
@@ -517,7 +545,10 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
 
   function drawChart(){
     // В режиме «Крупно» под графиком полоса для отметок дня
-    const near = zoom === "near", MS = near ? 32 : 0;
+    // высота полосы — по дню с наибольшим числом отметок (значки по 2 в ряд)
+    const near = zoom === "near";
+    const maxM = near ? Math.max(1, ...Object.keys(store.notes || {}).filter(isDate).map(k => marksOf(k).length + 1)) : 0;
+    const MS = near ? 4 + Math.ceil(maxM / 2) * 14 : 0;
     const svg = $("chart"), W = Math.max(svg.clientWidth || 600, 300), H = 240 + MS;
     svg.setAttribute("height", H);
     svg.setAttribute("viewBox", "0 0 " + W + " " + H);
@@ -627,8 +658,8 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
   function syncMarks(){
     const md = markDate(), m = marksOf(md);
     document.querySelectorAll("#marks button[data-m]").forEach(b => b.setAttribute("aria-pressed", String(m.includes(b.dataset.m))));
-    $("mkDate").textContent = ruDate(md);
-    // начало месячных: в календаре всегда последняя отмеченная дата; рядом день цикла и одна строка-подсказка
+    $("mkSel").textContent = m.map(k => MARKS[k]).join("");
+    // начало цикла (первый день месячных): в календаре всегда последняя отмеченная дата; рядом день цикла и одна строка-подсказка
     const cs = cycleStarts(), last = cs[cs.length - 1] || "";
     $("cyDate").value = last;
     $("cyDateTxt").textContent = last ? longDate(last) : "Выбрать дату";
@@ -663,7 +694,7 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
   // Одна строка о фазе. Вторая половина цикла ~14 дней, поэтому фазы после 5-го дня считаются от (прогнозного) начала следующего цикла.
   // Источники: вода 0,5–2 кг и обмен во второй половине ~+150 ккал/сут — nutrition-reference.md Зоси (Мартинчик, с. 64).
   function cycleHint(d){
-    if (!cycleStarts().length) return {cd:null, text:"Выберите первый день последних месячных — трекер посчитает день цикла"};
+    if (!cycleStarts().length) return {cd:null, text:"Выберите первый день последних месячных — это 1-й день цикла"};
     const day = dayNum(d), c = cycleAt(day); if (!c || !c.cd) return {cd:null, text:""};
     const left = c.next - day, cd = c.cd;
     let t;
@@ -732,7 +763,7 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
     else if (fastW(w0) && fastW(w1)){ cls = "bad"; t = "Две недели подряд среднее снижается быстрее 1 % веса. По плану: добавьте 100–150 ккал в день и посмотрите ещё неделю."; }
     else if (fastW(w0)){ cls = "warn"; t = "Эта неделя быстрее 1 % веса. Одна такая неделя — ещё не повод менять план: смотрим следующую. Повторится — добавьте 100–150 ккал в день."; }
     else if (stillW(w0) && stillW(w1)){ cls = "warn"; t = "Две недели среднее почти на месте. Если норму соблюдали — добавьте активность (шаги, кардио), калорийность ниже согласованной не опускайте. Загляните в замеры: они могут меняться, пока вес стоит."; }
-    else if (w0.ch > 0.05){ cls = "warn"; t = "Среднее за неделю выросло. Посмотрите отметки дня: часто это вода после солёного, сладкого, тренировки или перед циклом."; }
+    else if (w0.ch > 0.05){ cls = "warn"; t = "Среднее за неделю выросло. Посмотрите отметки «Что было вчера»: часто это вода после солёного, сладкого, позднего ужина, тренировки, недосыпа или перед циклом."; }
     else { cls = "good"; t = "Темп в норме: среднее снижается не быстрее 1 % веса в неделю."; }
     if (w0 && w0.ok && w0.pre && cls === "warn" && !fastW(w0)) t += " Неделя пришлась на дни перед циклом — часть прибавки может быть водой, вывод лучше сделать через неделю.";
     a.className = "tip" + (cls ? " " + cls : ""); a.textContent = t;
@@ -772,8 +803,7 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
   function setStatus(t, err){ const s = $("status"); s.textContent = t; s.className = "status" + (err ? " err" : ""); }
   function msg(id, t, err){ const m = $(id); m.textContent = t; m.className = "msg" + (err ? " err" : " ok"); }
 
-  // Подсказка у даты и кнопки ±0,1 от последнего веса
-  function lastKg(){ return weights.length ? weights[weights.length-1].kg : null; }
+  // Подсказка у даты
   function updateHint(){
     const d = $("wDate").value, had = store.weights[d];
     syncMarks();
@@ -781,10 +811,6 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
       const diff = dayNum(today) - dayNum(d), long = parseIso(d).toLocaleDateString("ru-RU", {day:"numeric", month:"long"});
       $("wDateTxt").textContent = diff === 0 ? "Сегодня, " + long : diff === 1 ? "Вчера, " + long : long;
     }
-  }
-  function step(delta){
-    const base = num($("wKg").value) ?? lastKg() ?? 67;
-    $("wKg").value = val(base + delta);
   }
   // Трекер может оставаться открытым в телефоне несколько дней: при возврате в него наступивший день становится «сегодня»
   function syncToday(){
@@ -796,8 +822,6 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
   window.addEventListener("pageshow", syncToday);
   window.addEventListener("focus", syncToday);
   $("wKg").addEventListener("input", () => $("wKg").classList.remove("bad"));
-  $("wMinus").addEventListener("click", () => { step(-0.1); $("wKg").classList.remove("bad"); });
-  $("wPlus").addEventListener("click", () => step(0.1));
   $("wDate").addEventListener("change", updateHint);
   $("wAll").addEventListener("click", () => { $("wTable").classList.add("all"); $("wAll").hidden = true; });
 
