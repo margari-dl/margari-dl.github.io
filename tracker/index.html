@@ -203,6 +203,10 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
 .marks .mk-h{font-weight:400;opacity:.85}
 .marks button{min-height:36px;padding:4px 12px;font-size:14px;font-weight:500;border-radius:99px;background:rgba(255,255,255,.7);color:var(--ink);border:1px solid rgba(255,255,255,.9);box-shadow:none}
 .marks button[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
+.mkday{display:inline-flex;gap:2px;padding:2px;border-radius:99px;background:rgba(255,255,255,.75);vertical-align:middle;margin:0 2px;text-shadow:none}
+.marks .mkday button{min-height:28px;padding:2px 10px;font-size:13px;border:0;background:transparent}
+.marks .mkday button[aria-pressed="true"]{background:var(--accent);color:#fff}
+.marks .mk-t:not(:first-child){margin-top:6px}
 /* счётчик режима */
 .tile.wide{grid-column:1 / -1}
 .weeks{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;margin:4px 0 2px}
@@ -262,11 +266,12 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
         <div class="msg" id="wMsg"></div>
       </form>
       <div class="marks" id="marks" role="group" aria-label="Отметки дня">
-        <span class="mk-t">Что было в этот день <span class="mk-h">— сказывается на весе следующего утра</span></span>
+        <span class="mk-t">Что было <span class="mkday"><button type="button" data-o="1" aria-pressed="true">вчера</button><button type="button" data-o="0" aria-pressed="false">сегодня</button></span> <span class="mk-h" id="mkDate"></span></span>
         <button type="button" data-m="sweet" aria-pressed="false">🍰 сладкое</button>
         <button type="button" data-m="salt" aria-pressed="false">🧂 солёное</button>
         <button type="button" data-m="train" aria-pressed="false">💪 тренировка</button>
-        <button type="button" data-m="cycle" aria-pressed="false">🌸 цикл</button>
+        <span class="mk-t">Цикл <span class="mk-h" id="cyInfo"></span></span>
+        <button type="button" id="cyBtn" aria-pressed="false">🌸 начались месячные</button>
       </div>
     </section>
 
@@ -299,7 +304,7 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
       <label class="goal-edit" for="goal">Цель, кг <input type="text" inputmode="decimal" id="goal" value="58" autocomplete="off"></label>
     </div>
     <svg id="chart" width="100%" height="240" role="img" aria-label="График веса"></svg>
-    <div class="legend"><span><i style="background:var(--avg)"></i>вес по дням</span><span><i style="background:var(--trend);height:2px"></i>среднее за 7 дней</span><span><i style="background:var(--goal)"></i>цель</span><span id="legW" hidden><i style="background:rgba(180,97,46,.25);height:10px"></i>выходные</span></div>
+    <div class="legend"><span><i style="background:var(--avg)"></i>вес по дням</span><span><i style="background:var(--trend);height:2px"></i>среднее за 7 дней</span><span><i style="background:var(--goal)"></i>цель</span><span id="legW" hidden><i style="background:rgba(180,97,46,.25);height:10px"></i>выходные</span><span id="legC" hidden><i style="background:rgba(138,47,99,.3);height:10px"></i>перед циклом</span></div>
   </section>
 
   <section class="card" aria-labelledby="hWk">
@@ -370,7 +375,8 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
 
   // Записи хранятся только в этом браузере: {weights:{дата:кг}, measures:{дата:{waist,hips,chest}}, goal}
   const KEY = "weight-tracker-v1";
-  let store = {weights:{}, measures:{}, goal:58, notes:{}, plan:{}}, canSave = true;
+  let store = {weights:{}, measures:{}, goal:58, notes:{}, plan:{}, cycles:[]}, canSave = true;
+  // cycles: первые дни месячных ["ГГГГ-ММ-ДД", ...] — по ним считаются день цикла и дни перед циклом
   // Отметки дня: {дата: ["sweet","salt","train","cycle"]}
   const MARKS = {sweet:"🍰", salt:"🧂", train:"💪", cycle:"🌸"};
   try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && typeof s === "object") store = Object.assign(store, s); }
@@ -444,7 +450,8 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
     weights.slice().reverse().forEach((e, i) => {
       const tr = document.createElement("tr");
       if (i >= 10) tr.className = "more";
-      tr.innerHTML = "<td>" + ruDate(e.date) + " " + marksOf(e.date).map(k => MARKS[k]).join("") + "</td><td class='num'>" + val(e.kg) + " кг</td><td class='num'></td>";
+      const cyc = cycleAt(e.day);
+      tr.innerHTML = "<td>" + ruDate(e.date) + " " + marksOf(e.date).map(k => MARKS[k]).join("") + (cycleStarts().includes(e.date) ? "🌸" : "") + (cyc && cyc.cd ? " <span class='status'>д." + cyc.cd + "</span>" : "") + "</td><td class='num'>" + val(e.kg) + " кг</td><td class='num'></td>";
       tr.lastChild.appendChild(delBtn("weights", e.date, "Вес"));
       wb.appendChild(tr);
     });
@@ -496,6 +503,7 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
     svg.setAttribute("viewBox", "0 0 " + W + " " + H);
     const L = 44, R = 12, T = 12, B = 28 + MS;
     $("legW").hidden = !near;
+    $("legC").hidden = !near || !cycleStarts().length;
     if (!weights.length){
       svg.innerHTML = "<text x='" + W/2 + "' y='" + H/2 + "' text-anchor='middle'>Здесь появится график после первых записей</text>";
       return;
@@ -526,6 +534,12 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
         if (wd === 0 || wd === 6){
           const a = Math.max(L, x(d - 0.5)), b = Math.min(W - R, x(d + 0.5));
           s += "<rect x='" + a.toFixed(1) + "' y='" + T + "' width='" + (b - a).toFixed(1) + "' height='" + (H - B - T) + "' fill='rgba(180,97,46,.10)'/>";
+        }
+        // дни перед циклом — сиреневая подсветка
+        const cy = cycleAt(d);
+        if (cy && cy.pre){
+          const a = Math.max(L, x(d - 0.5)), b = Math.min(W - R, x(d + 0.5));
+          s += "<rect x='" + a.toFixed(1) + "' y='" + T + "' width='" + (b - a).toFixed(1) + "' height='" + (H - B - T) + "' fill='rgba(138,47,99,.12)'/>";
         }
       }
     }
@@ -561,12 +575,13 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
     s += "<circle cx='" + lp[0] + "' cy='" + lp[1] + "' r='5.5' fill='var(--avg)' stroke='#fff' stroke-width='2'/>";
     if (near){
       // отметки дня — значками под днём, к которому относятся
-      Object.keys(store.notes || {}).filter(isDate).forEach(k => {
+      const cs = cycleStarts();
+      [...new Set(Object.keys(store.notes || {}).filter(isDate).concat(cs))].forEach(k => {
         const dn = dayNum(k); if (dn < d0 || dn > d1) return;
-        const m = marksOf(k);
-        m.forEach((key, j) => {
+        const m = marksOf(k).map(key => MARKS[key]).concat(cs.includes(k) ? ["🌸"] : []);
+        m.forEach((ic, j) => {
           const cx = x(dn) + (m.length > 1 ? ((j & 1) ? 7 : -7) : 0), cy = H - B + 13 + (j >> 1) * 14;
-          s += "<text x='" + cx.toFixed(1) + "' y='" + cy + "' text-anchor='middle' style='font-size:12px;opacity:1'>" + MARKS[key] + "</text>";
+          s += "<text x='" + cx.toFixed(1) + "' y='" + cy + "' text-anchor='middle' style='font-size:12px;opacity:1'>" + ic + "</text>";
         });
       });
     }
@@ -585,20 +600,62 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
   document.querySelectorAll(".zoom button").forEach(b => b.addEventListener("click", () => setZoom(b.dataset.z)));
   document.querySelectorAll(".zoom button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.z === zoom)));
 
-  // ===== Отметки дня: сохраняются сразу по нажатию, для даты в поле «Вес» =====
+  // ===== Отметки дня: сохраняются сразу по нажатию. По умолчанию — за вчера (взвешивание утром показывает вчерашний день) =====
+  let markOff = 1;
+  function markDate(){ const d = $("wDate").value; return isDate(d) ? addDays(d, -markOff) : null; }
   function marksOf(d){ const m = store.notes && store.notes[d]; return Array.isArray(m) ? m.filter(k => MARKS[k]) : []; }
   function syncMarks(){
-    const m = marksOf($("wDate").value);
-    document.querySelectorAll("#marks button").forEach(b => b.setAttribute("aria-pressed", String(m.includes(b.dataset.m))));
+    const md = markDate(), m = md ? marksOf(md) : [];
+    document.querySelectorAll("#marks button[data-m]").forEach(b => b.setAttribute("aria-pressed", String(m.includes(b.dataset.m))));
+    document.querySelectorAll(".mkday button").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.o === markOff)));
+    $("mkDate").textContent = md ? ruDate(md) + " — сказывается на весе следующего утра" : "";
+    const d = $("wDate").value, on = cycleStarts().includes(d);
+    $("cyBtn").setAttribute("aria-pressed", String(on));
+    $("cyBtn").textContent = on ? "🌸 месячные с " + ruDate(d) + " ✓" : "🌸 начались месячные";
+    $("cyInfo").textContent = cycleInfo(d);
   }
-  document.querySelectorAll("#marks button").forEach(b => b.addEventListener("click", () => {
-    const d = $("wDate").value; if (!isDate(d)) return;
+  document.querySelectorAll(".mkday button").forEach(b => b.addEventListener("click", () => { markOff = +b.dataset.o; syncMarks(); }));
+  document.querySelectorAll("#marks button[data-m]").forEach(b => b.addEventListener("click", () => {
+    const d = markDate(); if (!isDate(d)) return;
     const k = b.dataset.m; let m = marksOf(d);
     m = m.includes(k) ? m.filter(x => x !== k) : m.concat(k);
     if (!store.notes || typeof store.notes !== "object") store.notes = {};
     if (m.length) store.notes[d] = m; else delete store.notes[d];
     save(); render();
   }));
+  // ===== Цикл: только даты начала; день цикла и «дни перед циклом» (7 дней до следующего начала) считаются сами =====
+  function cycleStarts(){ return Array.isArray(store.cycles) ? store.cycles.filter(isDate).sort() : []; }
+  function cycleLen(){
+    const s = cycleStarts().map(dayNum), gaps = [];
+    for (let i = 1; i < s.length; i++){ const g = s[i] - s[i-1]; if (g >= 15 && g <= 60) gaps.push(g); }
+    const last = gaps.slice(-6);
+    return {len: last.length ? Math.round(last.reduce((a,b) => a + b, 0) / last.length) : 28, n: last.length};
+  }
+  function cycleAt(day){
+    const s = cycleStarts().map(dayNum); if (!s.length) return null;
+    let prev = null, next = null;
+    s.forEach(v => { if (v <= day) prev = v; else if (next == null) next = v; });
+    const predicted = next == null;
+    if (predicted) next = prev + cycleLen().len;
+    return {cd: prev != null ? day - prev + 1 : null, pre: day >= next - 7 && day < next, next, predicted};
+  }
+  function cycleInfo(d){
+    if (!isDate(d)) return "";
+    if (!cycleStarts().length) return "— отметьте первый день месячных, трекер посчитает день цикла";
+    const c = cycleAt(dayNum(d)), L = cycleLen(), p = [];
+    if (c.cd) p.push("день цикла " + c.cd);
+    if (c.predicted) p.push("следующий ≈ " + ruDate(dIso(c.next)));
+    p.push("цикл " + L.len + " дн." + (L.n ? "" : ", пока условно"));
+    if (c.pre) p.push("дни перед циклом: вес часто выше из-за воды");
+    return "— " + p.join(" · ");
+  }
+  $("cyBtn").addEventListener("click", () => {
+    const d = $("wDate").value; if (!isDate(d)) return;
+    let cs = cycleStarts();
+    cs = cs.includes(d) ? cs.filter(x => x !== d) : cs.concat(d).sort();
+    store.cycles = cs; save(); render();
+  });
+
   // ===== Сводка по неделям: недели по 7 дней назад от последней записи (как плитка «Темп за неделю») =====
   const dIso = d => new Date(d * DAY).toISOString().slice(0, 10);
   const sd = s => s.slice(8, 10) + "." + s.slice(5, 7);
@@ -609,6 +666,8 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
       const w = weights.filter(e => e.day <= end && e.day > end - 7);
       rows.push(w.length ? {end, n:w.length, avg:w.reduce((a,e) => a + e.kg, 0) / w.length} : {end, n:0});
     }
+    // неделя «перед циклом», если в ней 3+ таких дня
+    rows.forEach(r => { let c = 0; for (let d = r.end - 6; d <= r.end; d++){ const cy = cycleAt(d); if (cy && cy.pre) c++; } r.pre = c >= 3; });
     // изменение к предыдущей неделе; для вывода нужно хотя бы 3 записи в каждой из двух недель
     rows.forEach((r, i) => { const p = rows[i+1]; if (r.n && p && p.n){ r.ch = r.avg - p.avg; r.prev = p.avg; r.ok = r.n >= 3 && p.n >= 3; } });
     return rows;
@@ -629,7 +688,7 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
       const pct = r.ch != null ? r.ch / r.prev * 100 : null;
       const tr = document.createElement("tr");
       const a0 = dIso(r.end - 6), a1 = dIso(r.end);
-      tr.innerHTML = "<td>" + (a0.slice(5, 7) === a1.slice(5, 7) ? a0.slice(8, 10) : sd(a0)) + "–" + sd(a1) + "</td>"
+      tr.innerHTML = "<td>" + (a0.slice(5, 7) === a1.slice(5, 7) ? a0.slice(8, 10) : sd(a0)) + "–" + sd(a1) + (r.pre ? "<br><span class='status'>🌸 перед циклом</span>" : "") + "</td>"
         + "<td class='num'>" + (r.n ? fmt(r.avg) : "—") + "</td>"
         + "<td class='num'>" + (r.ch != null ? sign(r.ch) + "<br><span class='status'>" + (pct < 0 ? "−" : pct > 0 ? "+" : "") + fmt(Math.abs(pct), 1) + " %</span>" : "—") + "</td>"
         + "<td><span class='pill " + cls + "'>" + t + "</span></td>";
@@ -646,6 +705,7 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
     else if (stillW(w0) && stillW(w1)){ cls = "warn"; t = "Две недели среднее почти на месте. Если норму соблюдали — добавьте активность (шаги, кардио), калорийность ниже согласованной не опускайте. Загляните в замеры: они могут меняться, пока вес стоит."; }
     else if (w0.ch > 0.05){ cls = "warn"; t = "Среднее за неделю выросло. Посмотрите отметки дня: часто это вода после солёного, сладкого, тренировки или перед циклом."; }
     else { cls = "good"; t = "Темп в норме: среднее снижается не быстрее 1 % веса в неделю."; }
+    if (w0 && w0.ok && w0.pre && cls === "warn" && !fastW(w0)) t += " Неделя пришлась на дни перед циклом — часть прибавки может быть водой, вывод лучше сделать через неделю.";
     a.className = "tip" + (cls ? " " + cls : ""); a.textContent = t;
   }
   // ===== Счётчик жёсткого режима: 8 недель, затем 1–2 недели поддержания =====
