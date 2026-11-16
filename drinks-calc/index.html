@@ -245,7 +245,7 @@ const DEF={
   ['E','Действительный экстракт','%','','6,7','7,2'],
   ['K','Кислотность','см³','','6,1','6,6','6,2']]},
  soft:{v0:'',vt:'',rows:[
-  ['E','Массовая доля с/в','в свежеприготовленном сиропе, %','','',''],
+  ['E','Массовая доля с/в','в свежеприготовленном сиропе, %','','','',''],
   ['K','Кислотность','см³','','','','']]}
 };
 const store={alc:null,soft:null};
@@ -259,7 +259,7 @@ function build(){
    const ro=lock?' readonly tabindex="-1" title="Стандарт задан и не меняется"':'';
    return `<tr data-k="${r[0]}"><td class="p">${r[1]}<small>${r[2]}</small></td>
    <td data-l="Фактически"><input class="f" inputmode="decimal" placeholder="факт" value="${r[3]}"></td>
-   <td class="st" data-l="Стандарт от – до"><div class="rng"><input class="mn" inputmode="decimal" placeholder="от" value="${r[4]}"${ro}> – <input class="mx" inputmode="decimal" placeholder="до" value="${r[5]}"${ro}></div>${r[0]==='K'?`<div class="tgt"><span>цель</span><input class="tt" inputmode="decimal" placeholder="авто" value="${r[6]||''}"></div>`:''}</td><td class="now"></td></tr>`;}).join('');
+   <td class="st" data-l="Стандарт от – до"><div class="rng"><input class="mn" inputmode="decimal" placeholder="от" value="${r[4]}"${ro}> – <input class="mx" inputmode="decimal" placeholder="до" value="${r[5]}"${ro}></div>${r[0]==='K'||(!lock&&r[0]==='E')?`<div class="tgt"><span>цель</span><input class="tt" inputmode="decimal" placeholder="${r[0]==='K'?'авто':'середина'}" value="${r[6]||''}"></div>`:''}</td><td class="now"></td></tr>`;}).join('');
   $('stdNote').style.display=lock?'none':'';
   const soft=type==='soft';
   document.body.dataset.mode=type;
@@ -296,11 +296,13 @@ function calc(){
     o.name=tr.querySelector('.p').firstChild.textContent.trim();P[k]=o;
     o.hasF=isFinite(o.f)&&o.f>=0; o.hasS=isFinite(o.mn)&&isFinite(o.mx)&&o.mn>=0&&o.mn<=o.mx;
     o.on=o.hasF&&o.hasS; o.lo=o.mn; o.hi=o.mx;
-    const ttEl=tr.querySelector('.tt');o.tt=ttEl?num(ttEl.value):NaN;o.ttBad=false;o.ttAuto=false;
+    const ttEl=tr.querySelector('.tt');o.tt=ttEl?num(ttEl.value):NaN;o.ttBad=false;o.ttAuto=false;o.ttSet=false;
     if(o.hasS){if(k==='K'){if(isFinite(o.tt)&&o.tt>=o.mn&&o.tt<=o.mx)o.T=o.tt;else{o.ttBad=isFinite(o.tt);o.ttAuto=true;o.T=o.mn+0.2*(o.mx-o.mn);}}
       // алкогольные: экстракт вне нормы ведём к ближайшей границе стандарта, а не к середине
       else if(!soft&&k==='E'&&o.hasF&&(o.f<o.mn||o.f>o.mx)){o.edge=o.f<o.mn?'нижняя граница':'верхняя граница';o.T=o.f<o.mn?o.mn:o.mx;}
-      else o.T=(o.mn+o.mx)/2;}
+      // безалкогольные: с/в — к цели, если она введена и в пределах стандарта; иначе к середине
+      else if(soft&&k==='E'&&isFinite(o.tt)&&o.tt>=o.mn&&o.tt<=o.mx){o.T=o.tt;o.ttSet=true;}
+      else{o.ttBad=soft&&k==='E'&&isFinite(o.tt);o.T=(o.mn+o.mx)/2;}}
     if(ttEl)ttEl.classList.toggle('bad',o.ttBad);
     tr.querySelector('.now').innerHTML=o.on?tag(inStd(o.f,o.mn,o.mx)):'';
   }
@@ -315,11 +317,12 @@ function calc(){
   const rowsOut=out=>keys.map(k=>{const o=P[k];
     const was=o.hasF?f(o.f,2):'<span style="color:var(--muted)">не введено</span>';
     const will=o.on&&out?`<b>${f(out[k],2)}</b>`:(out&&o.hasF&&out[k]!==undefined?`<b>${f(out[k],2)}</b>`:'—');
-    const goal=o.hasS?(soft?f(o.mn,1)+' – '+f(o.mx,1):o.mn.toLocaleString('ru-RU',{minimumFractionDigits:1})+' – '+o.mx.toLocaleString('ru-RU',{minimumFractionDigits:1}))+`<br><small style="color:var(--muted);font-weight:600">${k==='K'?'цель '+f(o.T,2)+(o.ttAuto?' (авто)':''):o.edge?o.edge+' '+f(o.T,2):'середина '+f(o.T,2)}</small>`:'<span style="color:var(--muted)">не указан</span>';
+    const goal=o.hasS?(soft?f(o.mn,1)+' – '+f(o.mx,1):o.mn.toLocaleString('ru-RU',{minimumFractionDigits:1})+' – '+o.mx.toLocaleString('ru-RU',{minimumFractionDigits:1}))+`<br><small style="color:var(--muted);font-weight:600">${k==='K'||o.ttSet?'цель '+f(o.T,2)+(o.ttAuto?' (авто)':''):o.edge?o.edge+' '+f(o.T,2):'середина '+f(o.T,2)}</small>`:'<span style="color:var(--muted)">не указан</span>';
     const t=o.on&&out?tag(inStd(Math.round(out[k]*1000)/1000,o.mn,o.mx)):''; // округление: при цели на границе пересчёт плотности даёт сдвиг ~0,00001
     return `<tr><td class="p">${o.name}</td><td data-l="Было">${was}</td><td data-l="Станет">${will}</td><td data-l="Цель">${goal}</td><td class="tg">${t}</td></tr>`;}).join('');
 
-  if(keys.some(k=>P[k].ttBad))warns.push('Целевая кислотность вне стандарта — взята автоматически (нижняя граница + 20 % диапазона).');
+  if(P.K.ttBad)warns.push('Целевая кислотность вне стандарта — взята автоматически (нижняя граница + 20 % диапазона).');
+  if(soft&&P.E.ttBad)warns.push('Целевая массовая доля с/в вне стандарта — взята середина стандарта.');
   if(badS.length)warns.push('Стандарт «от» больше, чем «до»: '+badS.join(', ')+'.');
   const skip=[...(missF.length<keys.length?missF.map(x=>x+' (нет факта)'):[]),...missS.map(x=>x+' (нет стандарта)')];
   if(skip.length&&act.length)warns.push('Не учитывается в расчёте: '+skip.join(', ')+'.');
@@ -342,7 +345,7 @@ function calc(){
   // Окно цели: t=1 — к середине стандарта, t=0 — к ближайшей границе стандарта
   // Если всё в норме — не корректируем. Иначе к середине: показатели вне нормы и кислотность. Остальные (в норме) остаются как есть, только не выходят за стандарт.
   const anyOut=act.some(k=>P[k].f<P[k].mn||P[k].f>P[k].mx);
-  const win=(o,t,k)=>{const toMid=anyOut&&(k==='K'||o.f<o.mn||o.f>o.mx);if(!toMid)return[o.mn,o.mx];const T=o.T;if(o.edge)return[T,T];return[o.mn+t*(T-o.mn),o.mx-t*(o.mx-T)];};
+  const win=(o,t,k)=>{const toMid=anyOut&&(k==='K'||o.ttSet||o.f<o.mn||o.f>o.mx);if(!toMid)return[o.mn,o.mx];const T=o.T;if(o.edge)return[T,T];return[o.mn+t*(T-o.mn),o.mx-t*(o.mx-T)];};
   const solve=t=>{
     const [aL,aH]=aA?win(P.A,t,'A'):[0,0], [eL,eH]=aE?win(P.E,t,'E'):[0,0], [kL,kH]=aK?win(P.K,t,'K'):[0,0];
     const Alo=aL/100,Ahi=aH/100,xlo=aE?xFromE(eL,Atgt):0,xhi=aE?xFromE(eH,Atgt):0,klo=kL*KF,khi=kH*KF;
