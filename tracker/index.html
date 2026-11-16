@@ -95,6 +95,9 @@ button:disabled{opacity:.5;cursor:default}
 svg text{fill:var(--muted);font:12px var(--body)}
 .legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--muted)}
 .legend i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:6px}
+.zoom{display:inline-flex;gap:4px;padding:3px;border-radius:99px;background:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.9)}
+.zoom button{min-height:36px;padding:4px 14px;font-size:14px;font-weight:600;background:transparent;color:var(--ink);box-shadow:none}
+.zoom button[aria-pressed="true"]{background:var(--accent);color:#fff}
 .goal-edit{display:flex;gap:8px;align-items:center;font-size:14px;color:var(--muted)}
 .goal-edit input{width:76px;text-align:center;padding:6px 8px;min-height:40px;border-radius:99px}
 .head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;align-items:center}
@@ -254,6 +257,7 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
   <section class="card" aria-labelledby="hC">
     <div class="head">
       <h2 id="hC">Динамика</h2>
+      <div class="zoom" role="group" aria-label="Масштаб графика"><button type="button" data-z="all" aria-pressed="true">Весь путь</button><button type="button" data-z="near" aria-pressed="false">Крупно</button></div>
       <label class="goal-edit" for="goal">Цель, кг <input type="text" inputmode="decimal" id="goal" value="58" autocomplete="off"></label>
     </div>
     <svg id="chart" width="100%" height="240" role="img" aria-label="График веса"></svg>
@@ -442,34 +446,50 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
       svg.innerHTML = "<text x='" + W/2 + "' y='" + H/2 + "' text-anchor='middle'>Здесь появится график после первых записей</text>";
       return;
     }
-    const d0 = weights[0].day, d1 = Math.max(weights[weights.length-1].day, d0 + 6);
-    const vals = weights.map(e => e.kg).concat([goal]);
-    let lo = Math.floor(Math.min(...vals) - 0.5), hi = Math.ceil(Math.max(...vals) + 0.5);
-    if (hi - lo < 4) hi = lo + 4;
+    // «Крупно»: последние 4 недели, шкала только по весу — так видны дневные колебания; «Весь путь»: всё время вместе с целью
+    const near = zoom === "near", lastDay = weights[weights.length-1].day;
+    const shown = near ? weights.filter(e => e.day > lastDay - 28) : weights;
+    const d0 = shown[0].day, d1 = Math.max(lastDay, d0 + 6);
+    let lo, hi, step;
+    if (near){
+      const vals = shown.map(e => e.kg).concat(shown.map(e => avg7(e.day)));
+      lo = Math.floor((Math.min(...vals) - 0.2) * 2) / 2; hi = Math.ceil((Math.max(...vals) + 0.2) * 2) / 2;
+      if (hi - lo < 1.5) hi = lo + 1.5;
+      step = hi - lo > 4 ? 1 : 0.5;
+    } else {
+      const vals = weights.map(e => e.kg).concat([goal]);
+      lo = Math.floor(Math.min(...vals) - 0.5); hi = Math.ceil(Math.max(...vals) + 0.5);
+      if (hi - lo < 4) hi = lo + 4;
+      step = hi - lo > 12 ? 2 : 1;
+    }
     const x = d => L + (d - d0) / (d1 - d0) * (W - L - R);
     const y = v => T + (hi - v) / (hi - lo) * (H - T - B);
     let s = "";
-    const step = hi - lo > 12 ? 2 : 1;
-    for (let v = lo; v <= hi; v += step){
+    for (let i = 0; lo + i * step <= hi + 1e-9; i++){
+      const v = +(lo + i * step).toFixed(2);
       s += "<line x1='" + L + "' x2='" + (W-R) + "' y1='" + y(v) + "' y2='" + y(v) + "' stroke='var(--line)'/>";
-      s += "<text x='" + (L-8) + "' y='" + (y(v)+4) + "' text-anchor='end'>" + v + "</text>";
+      s += "<text x='" + (L-8) + "' y='" + (y(v)+4) + "' text-anchor='end'>" + val(v) + "</text>";
     }
-    const span = d1 - d0, tickEvery = span > 120 ? 30 : span > 40 ? 14 : 7;
+    const span = d1 - d0, tickEvery = span > 120 ? 30 : span > 40 ? 14 : (near && span <= 10) ? 2 : (near && span <= 20) ? 3 : 7;
     for (let d = d0; d <= d1; d += tickEvery){
       const dt = new Date(d * DAY);
       s += "<text x='" + x(d) + "' y='" + (H-8) + "' text-anchor='middle'>" + pad(dt.getDate()) + "." + pad(dt.getMonth()+1) + "</text>";
     }
-    s += "<line x1='" + L + "' x2='" + (W-R) + "' y1='" + y(goal) + "' y2='" + y(goal) + "' stroke='var(--goal)' stroke-width='2' stroke-dasharray='6 5'/>";
-    s += "<text x='" + (W-R) + "' y='" + (y(goal)-6) + "' text-anchor='end' style='fill:var(--goal)'>цель " + val(goal) + "</text>";
+    if (goal >= lo && goal <= hi){
+      s += "<line x1='" + L + "' x2='" + (W-R) + "' y1='" + y(goal) + "' y2='" + y(goal) + "' stroke='var(--goal)' stroke-width='2' stroke-dasharray='6 5'/>";
+      s += "<text x='" + (W-R) + "' y='" + (y(goal)-6) + "' text-anchor='end' style='fill:var(--goal)'>цель " + val(goal) + "</text>";
+    } else if (near){
+      s += "<text x='" + (W-R) + "' y='" + (H-B-6) + "' text-anchor='end' style='fill:var(--goal)'>цель " + val(goal) + " кг " + (goal < lo ? "ниже ↓" : "выше ↑") + "</text>";
+    }
     // Линия идёт через фактический вес каждого дня записи
-    const pts = weights.map(e => [x(e.day), y(e.kg)]);
+    const pts = shown.map(e => [x(e.day), y(e.kg)]);
     if (pts.length > 1){
       const line = pts.map((p,i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ");
       const area = line + " L" + pts[pts.length-1][0].toFixed(1) + " " + (H-B) + " L" + pts[0][0].toFixed(1) + " " + (H-B) + " Z";
       s += "<path d='" + area + "' fill='var(--accent-soft)' opacity='.6'/>";
       s += "<path d='" + line + "' fill='none' stroke='var(--avg)' stroke-width='2.5' stroke-linejoin='round' stroke-linecap='round'/>";
       // Поверх — тонкая линия среднего за 7 дней: сглаживает скачки воды и показывает общее направление
-      const trend = weights.map((e,i) => (i ? "L" : "M") + x(e.day).toFixed(1) + " " + y(avg7(e.day)).toFixed(1)).join(" ");
+      const trend = shown.map((e,i) => (i ? "L" : "M") + x(e.day).toFixed(1) + " " + y(avg7(e.day)).toFixed(1)).join(" ");
       s += "<path d='" + trend + "' fill='none' stroke='var(--trend)' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'/>";
     }
     pts.forEach(p => { s += "<circle cx='" + p[0].toFixed(1) + "' cy='" + p[1].toFixed(1) + "' r='3.5' fill='var(--avg)' stroke='#fff' stroke-width='1.5'/>"; });
@@ -478,6 +498,17 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
     svg.innerHTML = s;
   }
   window.addEventListener("resize", () => drawChart());
+  // Переключатель масштаба графика; выбор запоминается в этом браузере
+  let zoom = "all";
+  try { if (localStorage.getItem("weight-tracker-zoom") === "near") zoom = "near"; } catch(e){}
+  function setZoom(z){
+    zoom = z;
+    document.querySelectorAll(".zoom button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.z === z)));
+    try { localStorage.setItem("weight-tracker-zoom", z); } catch(e){}
+    drawChart();
+  }
+  document.querySelectorAll(".zoom button").forEach(b => b.addEventListener("click", () => setZoom(b.dataset.z)));
+  document.querySelectorAll(".zoom button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.z === zoom)));
 
   function setStatus(t, err){ const s = $("status"); s.textContent = t; s.className = "status" + (err ? " err" : ""); }
   function msg(id, t, err){ const m = $(id); m.textContent = t; m.className = "msg" + (err ? " err" : " ok"); }
