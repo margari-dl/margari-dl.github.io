@@ -206,14 +206,15 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
 #wKg.bad{border-color:var(--bad);box-shadow:0 0 0 2px rgba(168,48,44,.35)}
 .cyrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;width:100%}
 .cyrow .datechip{min-height:36px}
-.marks #cyBtn{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600}
-.marks #cyBtn:disabled{background:rgba(255,255,255,.7);color:var(--ink);border-color:rgba(255,255,255,.9);opacity:1}
-.cylist{display:flex;flex-wrap:wrap;gap:6px;width:100%}
-.cylist:empty{display:none}
-.marks .cylist button{min-height:32px;padding:2px 10px;font-size:13px}
-/* «Сброшено» — главная плитка, выделена цветом */
-.tile.hl{background:linear-gradient(160deg, rgba(31,90,52,.94), rgba(31,90,52,.8));border-color:rgba(255,255,255,.7);box-shadow:0 10px 26px rgba(31,90,52,.38)}
-.tile.hl .k{color:#fff;text-shadow:none;font-weight:600}
+/* блок цикла: дата начала → день цикла → одна строка-подсказка */
+.cyc{width:100%;display:grid;gap:8px;margin-top:6px;padding:12px;border-radius:18px;background:rgba(255,255,255,.62);border:1px solid rgba(255,255,255,.9)}
+.cyc .datechip{border-color:var(--accent)}
+.datechip .cyday{font-weight:400;color:var(--muted);padding-left:10px;border-left:1px solid rgba(22,48,31,.2)}
+.cyday:empty,.cyhint:empty{display:none}
+.cyhint{font-size:14px;line-height:1.4;font-weight:500;padding:6px 10px;border-radius:10px;background:var(--good-bg);color:var(--good)}
+/* «Сброшено» — главная плитка: стекло как у всех, белая рамка с ореолом и зелёная капсула под цифрой */
+.tile.hl{border:2px solid #fff;box-shadow:0 0 0 4px rgba(255,255,255,.28), 0 0 22px rgba(255,255,255,.65)}
+.tile.hl .v{background:var(--accent);color:#fff;box-shadow:0 4px 12px rgba(31,90,52,.35)}
 .marks .mk-t:not(:first-child){margin-top:6px}
 /* счётчик режима */
 .tile.wide{grid-column:1 / -1}
@@ -278,16 +279,18 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
         <button type="button" data-m="sweet" aria-pressed="false">🍰 сладкое</button>
         <button type="button" data-m="salt" aria-pressed="false">🧂 солёное</button>
         <button type="button" data-m="train" aria-pressed="false">💪 тренировка</button>
-        <span class="mk-t">🌸 Начало месячных <span class="mk-h" id="cyInfo"></span></span>
-        <div class="cyrow">
-          <label class="datechip" for="cyDate">
-            <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="12" rx="3" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M1.5 6.5h13M5 1v3M11 1v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-            <span id="cyDateTxt">Сегодня</span>
-            <input type="date" id="cyDate" aria-label="Первый день месячных">
-          </label>
-          <button type="button" id="cyBtn">Отметить</button>
+        <div class="cyc" role="group" aria-label="Цикл">
+          <span class="mk-t">🌸 Начало месячных</span>
+          <div class="cyrow">
+            <label class="datechip" for="cyDate">
+              <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="12" rx="3" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M1.5 6.5h13M5 1v3M11 1v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+              <span id="cyDateTxt">Выбрать дату</span>
+              <span class="cyday" id="cyDay"></span>
+              <input type="date" id="cyDate" aria-label="Первый день месячных">
+            </label>
+          </div>
+          <div class="cyhint" id="cyHint"></div>
         </div>
-        <div class="cylist" id="cyList"></div>
       </div>
     </section>
 
@@ -405,7 +408,7 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
   let weights = [], measures = [], goal = store.goal;
   let today = iso(new Date());
   $("wDate").value = today; $("mDate").value = today; $("goal").value = goal;
-  $("cyDate").value = today; $("cyDate").max = today;
+  $("cyDate").max = today;
 
   function load(){
     weights = Object.keys(store.weights).filter(isDate).map(d => ({date:d, kg:store.weights[d]})).filter(e => typeof e.kg === "number");
@@ -625,26 +628,14 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
     const md = markDate(), m = marksOf(md);
     document.querySelectorAll("#marks button[data-m]").forEach(b => b.setAttribute("aria-pressed", String(m.includes(b.dataset.m))));
     $("mkDate").textContent = ruDate(md);
-    // начало месячных: дата из календаря, по умолчанию сегодня
-    const cd = $("cyDate").value, cs = cycleStarts(), on = isDate(cd) && cs.includes(cd);
-    if (isDate(cd)) $("cyDateTxt").textContent = longDate(cd);
-    $("cyBtn").disabled = on; $("cyBtn").textContent = on ? "Отмечено ✓" : "Отметить";
-    $("cyInfo").textContent = cycleInfo(today);
-    const box = $("cyList"); box.innerHTML = "";
-    cs.slice(-3).reverse().forEach(s => {
-      const b = document.createElement("button"); b.type = "button";
-      b.textContent = "🌸 " + ruDate(s) + " ✕"; b.setAttribute("aria-label", "Удалить начало цикла " + ruDate(s));
-      b.addEventListener("click", () => {
-        store.cycles = cycleStarts().filter(x => x !== s); save(); render();
-        const t = $("toast"); $("toastTxt").textContent = "Начало цикла " + ruDate(s) + " удалено";
-        t.hidden = false; clearTimeout(undoTimer);
-        $("undo").onclick = () => { store.cycles = cycleStarts().concat(s).sort(); save(); render(); t.hidden = true; clearTimeout(undoTimer); };
-        undoTimer = setTimeout(() => { t.hidden = true; }, 5000);
-      });
-      box.appendChild(b);
-    });
+    // начало месячных: в календаре всегда последняя отмеченная дата; рядом день цикла и одна строка-подсказка
+    const cs = cycleStarts(), last = cs[cs.length - 1] || "";
+    $("cyDate").value = last;
+    $("cyDateTxt").textContent = last ? longDate(last) : "Выбрать дату";
+    const h = cycleHint(today);
+    $("cyDay").textContent = h.cd ? h.cd + "-й день" : "";
+    $("cyHint").textContent = h.text;
   }
-  $("cyDate").addEventListener("change", syncMarks);
   document.querySelectorAll("#marks button[data-m]").forEach(b => b.addEventListener("click", () => {
     const d = markDate(); if (!isDate(d)) return;
     const k = b.dataset.m; let m = marksOf(d);
@@ -669,21 +660,29 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
     if (predicted) next = prev + cycleLen().len;
     return {cd: prev != null ? day - prev + 1 : null, pre: day >= next - 7 && day < next, next, predicted};
   }
-  function cycleInfo(d){
-    if (!isDate(d)) return "";
-    if (!cycleStarts().length) return "— отметьте первый день месячных, трекер посчитает день цикла";
-    const c = cycleAt(dayNum(d)), L = cycleLen(), p = [];
-    if (c.cd) p.push("день цикла " + c.cd);
-    if (c.predicted) p.push("следующий ≈ " + ruDate(dIso(c.next)));
-    p.push("цикл " + L.len + " дн." + (L.n ? "" : ", пока условно"));
-    if (c.pre) p.push("дни перед циклом: вес часто выше из-за воды");
-    return "— " + p.join(" · ");
+  // Одна строка о фазе. Вторая половина цикла ~14 дней, поэтому фазы после 5-го дня считаются от (прогнозного) начала следующего цикла.
+  // Источники: вода 0,5–2 кг и обмен во второй половине ~+150 ккал/сут — nutrition-reference.md Зоси (Мартинчик, с. 64).
+  function cycleHint(d){
+    if (!cycleStarts().length) return {cd:null, text:"Выберите первый день последних месячных — трекер посчитает день цикла"};
+    const day = dayNum(d), c = cycleAt(day); if (!c || !c.cd) return {cd:null, text:""};
+    const left = c.next - day, cd = c.cd;
+    let t;
+    if (cd <= 2) t = "Вода ещё держится: вес может быть выше, это не жир";
+    else if (cd <= 5) t = "Вода уходит, вес обычно снижается";
+    else if (left <= 0) t = "Цикл длиннее обычного, такое бывает";
+    else if (left <= 7) t = "Перед циклом вода: +0,5–2 кг, смотри среднее";
+    else if (left <= 13) t = "Обмен чуть выше, аппетит растёт: держи белок";
+    else if (left <= 16) t = "Середина цикла: возможна небольшая задержка воды";
+    else t = "Ровные дни: вес сейчас самый честный";
+    return {cd, text:t};
   }
-  $("cyBtn").addEventListener("click", () => {
-    const d = $("cyDate").value; if (!isDate(d) || d > today) return;
-    const cs = cycleStarts(); if (cs.includes(d)) return;
-    store.cycles = cs.concat(d).sort(); save();
-    $("cyDate").value = today; render();
+  // Выбор даты сохраняет её сразу. Дата ближе 15 дней к последней отметке заменяет её (исправление ошибки), иначе добавляется новый цикл.
+  $("cyDate").addEventListener("change", () => {
+    const d = $("cyDate").value; if (!isDate(d) || d > today) { syncMarks(); return; }
+    let cs = cycleStarts(); if (cs.includes(d)) { syncMarks(); return; }
+    const last = cs[cs.length - 1];
+    if (last && Math.abs(dayNum(d) - dayNum(last)) < 15) cs = cs.slice(0, -1);
+    store.cycles = cs.concat(d).sort(); save(); render();
   });
 
   // ===== Сводка по неделям: недели по 7 дней назад от последней записи (как плитка «Темп за неделю») =====
@@ -791,7 +790,7 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
   function syncToday(){
     const t = iso(new Date());
     if (t === today) return;
-    today = t; $("wDate").value = t; $("mDate").value = t; $("cyDate").value = t; $("cyDate").max = t; updateHint();
+    today = t; $("wDate").value = t; $("mDate").value = t; $("cyDate").max = t; syncMarks(); updateHint();
   }
   document.addEventListener("visibilitychange", () => { if (!document.hidden) syncToday(); });
   window.addEventListener("pageshow", syncToday);
