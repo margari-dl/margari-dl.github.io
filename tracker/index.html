@@ -337,7 +337,7 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
         <button type="button" class="goalchip" id="goalBtn">цель 58 кг ✎</button>
         <form class="goalform" id="goalForm" hidden novalidate><input type="text" inputmode="decimal" id="goal2" aria-label="Цель, кг" autocomplete="off"><button type="submit">OK</button></form></div>
       <div class="tile"><span class="k">Среднее за 7 дней</span><span class="v" id="tAvg">—</span></div>
-      <div class="tile"><span class="k">Темп за неделю</span><span class="v" id="tPace">—</span><span class="pill none" id="tPaceP">нужно 8+ дней</span></div>
+      <div class="tile"><span class="k">Темп в неделю · 14 дней</span><span class="v" id="tPace">—</span><span class="pill none" id="tPaceP">нужно 6+ записей за 2 недели</span></div>
       <div class="tile wide" id="planTile"><span class="k">Жёсткий режим: 8 недель, потом 1–2 недели поддержания</span><span class="v" id="tPlan">—</span>
         <div class="weeks" id="tPlanBar" aria-hidden="true"></div>
         <span class="n" id="tPlanN">укажите дату начала режима</span>
@@ -472,12 +472,17 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
 
     const p = $("tPaceP"); let pace = null;
     $("tPace").classList.remove("bad");
-    if (last && first && last.day - first.day >= 7){
-      const prev = avg7(last.day - 7);
-      if (prev != null) pace = cur - prev;
+    // Темп = тренд за последние 14 дней: наклон прямой через все записи (метод наименьших квадратов), в кг за неделю
+    if (last){
+      const wk7 = weights.filter(e => e.day > last.day - 14);
+      if (wk7.length >= 6 && wk7[wk7.length-1].day - wk7[0].day >= 7){
+        const mx = wk7.reduce((a,e) => a + e.day, 0) / wk7.length, my = wk7.reduce((a,e) => a + e.kg, 0) / wk7.length;
+        const sxx = wk7.reduce((a,e) => a + (e.day - mx) ** 2, 0), sxy = wk7.reduce((a,e) => a + (e.day - mx) * (e.kg - my), 0);
+        pace = sxy / sxx * 7;
+      }
     }
     if (pace == null){
-      $("tPace").textContent = "—"; p.className = "pill none"; p.textContent = "нужно 8+ дней";
+      $("tPace").textContent = "—"; p.className = "pill none"; p.textContent = "нужно 6+ записей за 2 недели";
     } else {
       $("tPace").textContent = sign(pace) + " кг";
       const limit = cur * 0.01;
@@ -731,7 +736,7 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
     store.cycles = cs.concat(d).sort(); save(); render();
   });
 
-  // ===== Сводка по неделям: недели по 7 дней назад от последней записи (как плитка «Темп за неделю») =====
+  // ===== Сводка по неделям: недели по 7 дней назад от последней записи (плитка «Темп за 2 недели» с 18.11.2026 — тренд за 14 дней, в кг за неделю) =====
   const dIso = d => new Date(d * DAY).toISOString().slice(0, 10);
   const sd = s => s.slice(8, 10) + "." + s.slice(5, 7);
   function weekStats(){
@@ -762,7 +767,7 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
       else t = "на месте";
       const pct = r.ch != null ? r.ch / r.prev * 100 : null;
       const tr = document.createElement("tr");
-      const a0 = dIso(r.end - 6), a1 = dIso(r.end);
+      const a0 = dIso(Math.max(r.end - 6, weights[0].day)), a1 = dIso(r.end); // первая неделя — с даты первой записи
       tr.innerHTML = "<td>" + (a0.slice(5, 7) === a1.slice(5, 7) ? a0.slice(8, 10) : sd(a0)) + "–" + sd(a1) + (r.pre ? "<br><span class='status'>🌸 перед циклом</span>" : "") + "</td>"
         + "<td class='num'>" + (r.n ? fmt(r.avg) : "—") + "</td>"
         + "<td class='num'>" + (r.ch != null ? sign(r.ch) + "<br><span class='status'>" + (pct < 0 ? "−" : pct > 0 ? "+" : "") + fmt(Math.abs(pct), 1) + " %</span>" : "—") + "</td>"
