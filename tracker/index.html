@@ -337,7 +337,7 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
         <button type="button" class="goalchip" id="goalBtn">цель 58 кг ✎</button>
         <form class="goalform" id="goalForm" hidden novalidate><input type="text" inputmode="decimal" id="goal2" aria-label="Цель, кг" autocomplete="off"><button type="submit">OK</button></form></div>
       <div class="tile"><span class="k">Среднее за 7 дней</span><span class="v" id="tAvg">—</span></div>
-      <div class="tile"><span class="k">Темп в неделю · 14 дней</span><span class="v" id="tPace">—</span><span class="pill none" id="tPaceP">нужно 6+ записей за 2 недели</span></div>
+      <div class="tile"><span class="k" id="tPaceK">Темп, % веса в неделю</span><span class="v" id="tPace">—</span><span class="pill none" id="tPaceP">нужно 6+ записей за 2 недели</span></div>
       <div class="tile wide" id="planTile"><span class="k">Жёсткий режим: 8 недель, потом 1–2 недели поддержания</span><span class="v" id="tPlan">—</span>
         <div class="weeks" id="tPlanBar" aria-hidden="true"></div>
         <span class="n" id="tPlanN">укажите дату начала режима</span>
@@ -472,7 +472,8 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
 
     const p = $("tPaceP"); let pace = null;
     $("tPace").classList.remove("bad");
-    // Темп = тренд за последние 14 дней: наклон прямой через все записи (метод наименьших квадратов), в кг за неделю
+    // Темп = тренд за последние 14 дней: наклон прямой через все записи (метод наименьших квадратов).
+    // pace — кг в неделю (для прогноза); на плитке — он же в % от среднего за 7 дней: норма 0,5–1 %, быстрее 1 % — «быстро»
     if (last){
       const wk7 = weights.filter(e => e.day > last.day - 14);
       if (wk7.length >= 6 && wk7[wk7.length-1].day - wk7[0].day >= 7){
@@ -484,12 +485,14 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
     if (pace == null){
       $("tPace").textContent = "—"; p.className = "pill none"; p.textContent = "нужно 6+ записей за 2 недели";
     } else {
-      $("tPace").textContent = sign(pace) + " кг";
+      const pct = pace / cur * 100;
+      $("tPace").textContent = (pct < -0.05 ? "−" : pct > 0.05 ? "+" : "") + fmt(Math.abs(pct), 1) + " %";
       const limit = cur * 0.01;
       if (pace > 0.05){ p.className = "pill warn"; p.textContent = "вес растёт"; }
       // быстрее 1 % веса в неделю — цифра в красной капсуле и одно слово; что делать — в «По неделям»
       else if (-pace > limit){ p.className = "pill bad"; p.textContent = "быстро"; $("tPace").classList.add("bad"); }
-      else if (-pace >= 0.15){ p.className = "pill good"; p.textContent = "безопасный темп"; }
+      else if (-pct >= 0.5){ p.className = "pill good"; p.textContent = "норма"; }
+      else if (-pct >= 0.2){ p.className = "pill none"; p.textContent = "медленно, но идёт"; }
       else { p.className = "pill none"; p.textContent = "почти на месте"; }
     }
 
