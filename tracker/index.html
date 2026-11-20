@@ -107,6 +107,11 @@ table.all tr.more{display:table-row}
 .tablebox{overflow-x:auto}
 .empty{color:var(--muted);font-size:14px}
 .status{font-size:13px;color:var(--muted)}
+/* шапка: последний вес справа (v30) — тонкий шрифт как у заголовка, белый ореол */
+.hero-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.hero-w{text-align:right;flex:none}
+.hero-n{font:300 34px/1 var(--display);letter-spacing:-.02em;color:var(--ink);text-shadow:0 0 2px #fff, 0 0 6px #fff, 0 0 12px rgba(255,255,255,.85)}
+.hero-w .status{margin-top:3px;white-space:nowrap}
 .status.err{color:var(--bad)}
 .tip{font-size:13px;line-height:1.45;color:var(--muted);margin:0}
 .d{font-size:13px;color:var(--muted)}
@@ -265,7 +270,7 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
 .tip.good{box-shadow:inset 4px 0 0 var(--good)}
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.hero,.card,.tile{background:rgba(255,255,255,.85)}}
 @media (max-width:760px){.tiles{grid-template-columns:1fr 1fr}.cols{grid-template-columns:1fr}}
-@media (max-width:360px){.tile .v{font-size:22px}#wKg{font-size:32px}h1{font-size:30px}}
+@media (max-width:360px){.tile .v{font-size:22px}#wKg{font-size:32px}h1{font-size:30px}.hero-n{font-size:30px}}
 @media (prefers-reduced-motion:no-preference){button{transition:opacity .15s,transform .1s}button:active{transform:scale(.97)}}
 </style>
 </head>
@@ -273,7 +278,7 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
 <div class="backdrop" aria-hidden="true"></div>
 <div class="wrap">
   <header class="hero">
-    <h1>Трекер веса</h1>
+    <div class="hero-top"><h1>Трекер веса</h1><div class="hero-w" id="hW" hidden><div class="hero-n" id="hWn"></div><div class="status" id="hWd"></div></div></div>
     <div class="status" id="status"></div>
   </header>
 
@@ -468,6 +473,9 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
 
     const last = weights[weights.length-1], first = weights[0];
     const cur = last ? avg7(last.day) : null;
+    // шапка: последний вес и дата записи
+    $("hW").hidden = !last;
+    if (last){ $("hWn").textContent = val(last.kg); $("hWd").textContent = "кг · " + shortDate(last.date); }
     $("tAvg").textContent = cur == null ? "—" : fmt(cur) + " кг";
 
     const p = $("tPaceP"); let pace = null;
