@@ -758,7 +758,12 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
       rows.push(w.length ? {end, n:w.length, avg:w.reduce((a,e) => a + e.kg, 0) / w.length} : {end, n:0});
     }
     // неделя «перед циклом», если в ней 3+ таких дня
-    rows.forEach(r => { let c = 0; for (let d = r.end - 6; d <= r.end; d++){ const cy = cycleAt(d); if (cy && cy.pre) c++; } r.pre = c >= 3; });
+    // метка цикла (v31): если в неделю попало начало цикла и дней с него не меньше, чем дней «перед циклом», — «начало цикла»;
+    // иначе «перед циклом» при 3+ таких днях
+    const starts = cycleStarts().map(dayNum);
+    rows.forEach(r => { let c = 0; for (let d = r.end - 6; d <= r.end; d++){ const cy = cycleAt(d); if (cy && cy.pre) c++; }
+      const s = starts.find(v => v >= r.end - 6 && v <= r.end);
+      r.start = s != null && r.end - s + 1 >= c; r.pre = !r.start && c >= 3; });
     // изменение к предыдущей неделе; для вывода нужно хотя бы 3 записи в каждой из двух недель
     rows.forEach((r, i) => { const p = rows[i+1]; if (r.n && p && p.n){ r.ch = r.avg - p.avg; r.prev = p.avg; r.ok = r.n >= 3 && p.n >= 3; } });
     return rows;
@@ -779,7 +784,7 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
       const pct = r.ch != null ? r.ch / r.prev * 100 : null;
       const tr = document.createElement("tr");
       const a0 = dIso(Math.max(r.end - 6, weights[0].day)), a1 = dIso(r.end); // первая неделя — с даты первой записи
-      tr.innerHTML = "<td>" + (a0.slice(5, 7) === a1.slice(5, 7) ? a0.slice(8, 10) : sd(a0)) + "–" + sd(a1) + (r.pre ? "<br><span class='status'>🌸 перед циклом</span>" : "") + "</td>"
+      tr.innerHTML = "<td>" + (a0.slice(5, 7) === a1.slice(5, 7) ? a0.slice(8, 10) : sd(a0)) + "–" + sd(a1) + (r.start ? "<br><span class='status'>🌸 начало цикла</span>" : r.pre ? "<br><span class='status'>🌸 перед циклом</span>" : "") + "</td>"
         + "<td class='num'>" + (r.n ? fmt(r.avg) : "—") + "</td>"
         + "<td class='num'>" + (r.ch != null ? sign(r.ch) + "<br><span class='status'>" + (pct < 0 ? "−" : pct > 0 ? "+" : "") + fmt(Math.abs(pct), 1) + " %</span>" : "—") + "</td>"
         + "<td><span class='pill " + cls + "'>" + t + "</span></td>";
@@ -797,6 +802,7 @@ details[open] > summary .openbtn svg{transform:rotate(180deg)}
     else if (w0.ch > 0.05){ cls = "warn"; t = "Среднее за неделю выросло. Посмотрите отметки «Что было вчера»: часто это вода после солёного, сладкого, позднего ужина, тренировки, недосыпа или перед циклом."; }
     else { cls = "good"; t = "Темп в норме: среднее снижается не быстрее 1 % веса в неделю."; }
     if (w0 && w0.ok && w0.pre && cls === "warn" && !fastW(w0)) t += " Неделя пришлась на дни перед циклом — часть прибавки может быть водой, вывод лучше сделать через неделю.";
+    if (w0 && w0.ok && w0.start && cls === "warn" && !fastW(w0)) t += " Неделя пришлась на начало цикла — в первые дни вода держится, вывод лучше сделать через неделю.";
     a.className = "tip" + (cls ? " " + cls : ""); a.textContent = t;
   }
   // ===== Счётчик жёсткого режима: 8 недель, затем 1–2 недели поддержания =====
